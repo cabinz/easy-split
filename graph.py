@@ -3,13 +3,19 @@ from typing import List
 from collections import defaultdict
 import math
 
+from utils.logger import get_logger
+
+
+logger = get_logger(__name__)
+
 
 class LendingGraph:
     """A direct weighted graph, where weights are the lending flows."""
 
-    def __init__(self) -> None:
+    def __init__(self, log=logger) -> None:
         self._adj_lt = defaultdict(lambda: defaultdict(float))
         self.net_out_flow = defaultdict(float)
+        self.log = logger
 
     def vis(self) -> None:
         for lender in self._adj_lt.keys():
@@ -54,14 +60,13 @@ class LendingGraph:
 
     def _get_ring(self, curr_node, adj_lt, path):  # DFS
         if curr_node in path:
-            # print(f"DFS is now at {path}, end here.")
+            self.log.debug(f"DFS is now at {path}, end here.")
             return path if curr_node == path[0] else None
 
         path.append(curr_node)
-        # print(f"DFS is now at {path}")
+        self.log.debug(f"DFS is now at {path}")
         childs = self.get_childs(curr_node)
         test_s = [f"{c}({self.get_edge(curr_node, c)})" for c in childs]
-        # print(f"chlids from {curr_node}: {test_s}")
         for nxt in childs:
             ring = self._get_ring(nxt, adj_lt, path)
             if ring:
@@ -74,28 +79,23 @@ class LendingGraph:
         for i in range(len(ring)):
             lender, debtor = ring[i], ring[(i + 1) % len(ring)]
             min_weight = min(min_weight, self.get_edge(lender, debtor))
-            # print(f"  new_min_weight: L[{lender}]-D[{debtor}] W[{min_weight}]")
+            self.log.debug(f"  new_min_weight: L[{lender}]-D[{debtor}] W[{min_weight}]")
         for i in range(len(ring)):
             lender, debtor = ring[i], ring[(i + 1) % len(ring)]
             self.add_edge(lender, debtor, -min_weight)
-            # print(
-            #     f"    add_edge: L[{lender}]-D[{debtor}] dA[{-min_weight}] A[{self.get_flow(lender, debtor)}]"
-            # )
+            self.log.debug(
+                f"    add_edge: L[{lender}]-D[{debtor}] dA[{-min_weight}] A[{self.get_flow(lender, debtor)}]"
+            )
 
     def break_rings(self):
         # Note that this may result in different new graph depending on the order of rings found.
-        # print(f"get_nodes(): {self.get_nodes()}")
         for node in self.get_nodes():
-            # print(f"break rings start from: {node}")
+            self.log.debug(f"break rings start from: {node}")
             while True:
                 ring = self._get_ring(node, self._adj_lt, path=[])
-                # print(f"_get_ring: {ring}")
                 if ring is None:
                     break
                 self._break_ring(ring)
-                # print("Aft break ring:")
-                # self.vis()
-                # break
 
     def dump(
         self,
@@ -157,16 +157,13 @@ def simplest_equiv(g: LendingGraph) -> LendingGraph:
             unmatched_out.append([node, net_out])
         elif net_out < 0:
             unmatched_in.append([node, -net_out])
-    # print(f"umatched_out = {unmatched_out}, unmatched_in = {unmatched_in}")
 
     unmatched_out, unmatched_in = _reduce_match(unmatched_out, unmatched_in)
-    # print(f"REDUCED:: umatched_out = {unmatched_out}, unmatched_in = {unmatched_in}")
 
     while unmatched_in and unmatched_out:
         max_out = max(unmatched_out, key=lambda x: x[1])
         max_in = max(unmatched_in, key=lambda x: x[1])
         flow = min(max_out[1], max_in[1])
-        # print(f"max_out = {max_out}, max_in = {max_in}, flow = {flow}")
         equiv_g.add_edge(lender=max_out[0], debtor=max_in[0], amount=flow)
         if max_out[1] <= max_in[1]:
             max_in[1] -= flow
@@ -175,7 +172,6 @@ def simplest_equiv(g: LendingGraph) -> LendingGraph:
             max_out[1] -= flow
             unmatched_in.remove(max_in)
         unmatched_out, unmatched_in = _reduce_match(unmatched_out, unmatched_in)
-        # print(f"umatched_out = {unmatched_out}, unmatched_in = {unmatched_in}")
 
     assert (
         len(unmatched_in) == 0 and len(unmatched_out) == 0

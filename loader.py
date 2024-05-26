@@ -55,7 +55,6 @@ class Loader:
                 debtors = split_names(row[self._col_debtor])
 
             for debtor in debtors:
-                # print(f"Go: L={lender}, D={debtor}, A={row[COL_PP]}")
                 self._g.add_edge(lender, debtor, row[self._col_pp])
 
     def get_graph(self):
