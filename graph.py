@@ -119,5 +119,70 @@ class LendingGraph:
 
         return df
 
+
+def simplest_equiv(g: LendingGraph) -> LendingGraph:
+    equiv_g = LendingGraph()
+
+    def _reduce_match(out_flow, in_flow):
+        # TODO: This is a low-efficient impl with two nested-loops incurring O(2N^2)
+        um_out, um_in = [], []
+        for lender, out_f in out_flow:
+            matched = False
+            for i, (debtor, in_f) in enumerate(in_flow):
+                if math.isclose(out_f, in_f):
+                    equiv_g.add_edge(lender, debtor, out_f)
+                    del in_flow[i]
+                    matched = True
+                    break
+            if not matched:
+                um_out.append([lender, out_f])
+
+        for debtor, in_f in in_flow:
+            matched = False
+            for i, (lender, out_f) in enumerate(out_flow):
+                if math.isclose(out_f, in_f):
+                    equiv_g.add_edge(lender, debtor, out_f)
+                    del out_flow[i]
+                    matched = True
+                    break
+            if not matched:
+                um_in.append([debtor, in_f])
+
+        return um_out, um_in
+
+    unmatched_out, unmatched_in = [], []
+    for node in g.get_nodes():
+        net_out = g.net_out_flow[node]
+        if net_out > 0:
+            unmatched_out.append([node, net_out])
+        elif net_out < 0:
+            unmatched_in.append([node, -net_out])
+    # print(f"umatched_out = {unmatched_out}, unmatched_in = {unmatched_in}")
+
+    unmatched_out, unmatched_in = _reduce_match(unmatched_out, unmatched_in)
+    # print(f"REDUCED:: umatched_out = {unmatched_out}, unmatched_in = {unmatched_in}")
+
+    while unmatched_in and unmatched_out:
+        max_out = max(unmatched_out, key=lambda x: x[1])
+        max_in = max(unmatched_in, key=lambda x: x[1])
+        flow = min(max_out[1], max_in[1])
+        # print(f"max_out = {max_out}, max_in = {max_in}, flow = {flow}")
+        equiv_g.add_edge(lender=max_out[0], debtor=max_in[0], amount=flow)
+        if max_out[1] <= max_in[1]:
+            max_in[1] -= flow
+            unmatched_out.remove(max_out)
+        else:
+            max_out[1] -= flow
+            unmatched_in.remove(max_in)
+        unmatched_out, unmatched_in = _reduce_match(unmatched_out, unmatched_in)
+        # print(f"umatched_out = {unmatched_out}, unmatched_in = {unmatched_in}")
+
+    assert (
+        len(unmatched_in) == 0 and len(unmatched_out) == 0
+    ), f"in remained = {unmatched_in}, out remained = {unmatched_out}"
+
+    return equiv_g
+
+
 if __name__ == "__main__":
     pass
