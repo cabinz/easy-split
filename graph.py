@@ -3,30 +3,23 @@ from typing import List
 from collections import defaultdict
 import math
 
-COL_LENDER = "Payer"
-COL_DEBTOR = "Pay for"
-COL_PP = "Amount (pp.)"
-COL_AMOUNT = "Amount (KWR)"
-COL_AMOUNT_HKD = "Amount (HKD)"
-KRW2HKD = 0.0057715
-MEMBERS = {"Cathy", "Cabin", "Vivian", "Alan"}
-
 
 class LendingGraph:
     """A direct weighted graph, where weights are the lending flows."""
 
     def __init__(self) -> None:
         self._adj_lt = defaultdict(lambda: defaultdict(float))
+        self.net_out_flow = defaultdict(float)
 
     def vis(self) -> None:
         for lender in self._adj_lt.keys():
             for debtor, amount in self._adj_lt[lender].items():
-                print(f"{lender} --{amount}--> {debtor}")
+                print(f"{lender} --{amount:.2f}--> {debtor}")
 
     def get_nodes(self) -> List[str]:
-        lt = list(self._adj_lt.keys())
+        lt = set(self._adj_lt.keys())
         for lender in self._adj_lt.keys():
-            lt.extend(list(self._adj_lt[lender].keys()))
+            lt.update(list(self._adj_lt[lender].keys()))
         return list(set(lt))
 
     def add_edge(self, lender, debtor, amount) -> None:
@@ -34,6 +27,8 @@ class LendingGraph:
             lender != debtor
         ), f"Lender and debtor ({lender}) should not be the same one!"
         self._adj_lt[lender][debtor] += amount
+        self.net_out_flow[lender] += amount
+        self.net_out_flow[debtor] -= amount
         if math.isclose(self._adj_lt[lender][debtor], 0.0):
             self.remove_edge(lender, debtor)
 
@@ -50,6 +45,8 @@ class LendingGraph:
     def remove_edge(self, lender, debtor) -> float:
         amount = self.get_edge(lender, debtor)
         self._adj_lt[lender].pop(debtor, None)
+        self.net_out_flow[lender] -= amount
+        self.net_out_flow[debtor] += amount
         return amount
 
     def get_childs(self, node) -> List[str]:
@@ -77,13 +74,17 @@ class LendingGraph:
         for i in range(len(ring)):
             lender, debtor = ring[i], ring[(i + 1) % len(ring)]
             min_weight = min(min_weight, self.get_edge(lender, debtor))
-            # print(f"new_min_weight: L[{lender}]-D[{debtor}] W[{min_weight}]")
+            # print(f"  new_min_weight: L[{lender}]-D[{debtor}] W[{min_weight}]")
         for i in range(len(ring)):
             lender, debtor = ring[i], ring[(i + 1) % len(ring)]
             self.add_edge(lender, debtor, -min_weight)
-            # print(f"add_edge: L[{lender}]-D[{debtor}] A[{-min_weight}]")
+            # print(
+            #     f"    add_edge: L[{lender}]-D[{debtor}] dA[{-min_weight}] A[{self.get_flow(lender, debtor)}]"
+            # )
 
     def break_rings(self):
+        # Note that this may result in different new graph depending on the order of rings found.
+        # print(f"get_nodes(): {self.get_nodes()}")
         for node in self.get_nodes():
             # print(f"break rings start from: {node}")
             while True:
@@ -91,67 +92,32 @@ class LendingGraph:
                 # print(f"_get_ring: {ring}")
                 if ring is None:
                     break
-                # print("B4 break ring:")
-                self.vis()
                 self._break_ring(ring)
                 # print("Aft break ring:")
-                self.vis()
+                # self.vis()
                 # break
 
-    def dump(self) -> pd.DataFrame:
-        data_types = {
-            COL_LENDER: "object",  # 'object' is typically used for strings
-            COL_DEBTOR: "object",
-            COL_AMOUNT: "float64",  # 'float64' for floating point numbers
-            COL_AMOUNT_HKD: "float64",
-        }
-
+    def dump(
+        self,
+        col_lender: str = "Lender",
+        col_debtor: str = "Debtor",
+        col_amount: str = "Amount",
+    ) -> pd.DataFrame:
         # Create an empty DataFrame
+        data_types = {
+            col_lender: "object",  # 'object' is typically used for strings
+            col_debtor: "object",
+            col_amount: "float64",  # 'float64' for floating point numbers
+        }
         df = pd.DataFrame(columns=data_types.keys()).astype(data_types)
 
-        nodes = self.get_nodes()
+        for lender in self._adj_lt:
+            for debtor in self._adj_lt[lender]:
+                amount = self.get_flow(lender, debtor)
+                new_row = pd.DataFrame([[lender, debtor, amount]], columns=df.columns)
+                df = pd.concat([df, new_row], ignore_index=True)
 
-        for i in range(len(nodes)):
-            for j in range(i + 1, len(nodes)):
-                i2j = self.get_flow(nodes[i], nodes[j])
-                j2i = self.get_flow(nodes[j], nodes[i])
-                lender = nodes[i] if i2j > j2i else nodes[j]
-                debtor = nodes[j] if i2j > j2i else nodes[i]
-                amount = math.fabs(i2j - j2i)
-                if not math.isclose(amount, 0.0):
-                    amount_hkd = amount * KRW2HKD
-                    new_row = pd.DataFrame(
-                        [[lender, debtor, amount, amount_hkd]], columns=df.columns
-                    )
-                    df = pd.concat([df, new_row], ignore_index=True)
         return df
 
-
-def split_names(s_names: str, splitter: str = ",") -> List[str]:
-    names = [name.strip() for name in s_names.split(splitter)]
-    return names
-
-
 if __name__ == "__main__":
-    file_path = "data/test_cyc.csv"
-    df = pd.read_csv(file_path)
-    g = LendingGraph()
-
-    for index, row in df.iterrows():
-        lender = row[COL_LENDER]
-        if row[COL_DEBTOR].lower() == "all":
-            debtors = MEMBERS.copy()
-            debtors.remove(lender)
-        else:
-            debtors = split_names(row[COL_DEBTOR])
-
-        for debtor in debtors:
-            # print(f"Go: L={lender}, D={debtor}, A={row[COL_PP]}")
-            g.add_edge(lender, debtor, row[COL_PP])
-
-    g.break_rings()
-    d = g.dump()
-    print(d)
-
-    # to_file = 'out/Korea24_net.csv'
-    # d.to_csv(to_file)
+    pass
