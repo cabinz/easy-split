@@ -1,5 +1,6 @@
+from copy import deepcopy
 import pandas as pd
-from typing import List
+from typing import List, Tuple, Dict
 from collections import defaultdict
 import math
 
@@ -7,6 +8,16 @@ from utils.logger import get_logger
 
 
 logger = get_logger(__name__)
+
+ABS_TOL = 1e-02
+
+
+def is_equal(fp1, fp2):
+    return math.isclose(fp1, fp2, abs_tol=ABS_TOL)
+
+
+def is_zero(flt):
+    return is_equal(flt, 0.0)
 
 
 class LendingGraph:
@@ -17,10 +28,12 @@ class LendingGraph:
         self.net_out_flow = defaultdict(float)
         self.log = logger
 
-    def vis(self) -> None:
+    def vis(self) -> str:
+        s = ""
         for lender in self._adj_lt.keys():
             for debtor, amount in self._adj_lt[lender].items():
-                print(f"{lender} --{amount:.2f}--> {debtor}")
+                s += f"{lender} --{amount:.2f}--> {debtor}\n"
+        return s.strip()
 
     def get_nodes(self) -> List[str]:
         lt = set(self._adj_lt.keys())
@@ -35,7 +48,7 @@ class LendingGraph:
         self._adj_lt[lender][debtor] += amount
         self.net_out_flow[lender] += amount
         self.net_out_flow[debtor] -= amount
-        if math.isclose(self._adj_lt[lender][debtor], 0.0):
+        if is_zero(self._adj_lt[lender][debtor]):
             self.remove_edge(lender, debtor)
 
     def has_edge(self, lender, debtor) -> bool:
@@ -44,6 +57,12 @@ class LendingGraph:
     def get_edge(self, lender, debtor) -> float:
         assert self.has_edge(lender, debtor)
         return self._adj_lt[lender][debtor]
+
+    def get_edges(self, lender) -> List[Tuple]:
+        return self._adj_lt[lender]
+
+    def num_edges(self) -> int:
+        return sum(len(lender) for lender in self._adj_lt)
 
     def get_flow(self, lender, debtor) -> float:
         return self._adj_lt[lender][debtor] if self.has_edge(lender, debtor) else 0.0
@@ -57,45 +76,6 @@ class LendingGraph:
 
     def get_childs(self, node) -> List[str]:
         return list(self._adj_lt[node].keys()) if node in self._adj_lt else []
-
-    def _get_ring(self, curr_node, adj_lt, path):  # DFS
-        if curr_node in path:
-            self.log.debug(f"DFS is now at {path}, end here.")
-            return path if curr_node == path[0] else None
-
-        path.append(curr_node)
-        self.log.debug(f"DFS is now at {path}")
-        childs = self.get_childs(curr_node)
-        test_s = [f"{c}({self.get_edge(curr_node, c)})" for c in childs]
-        for nxt in childs:
-            ring = self._get_ring(nxt, adj_lt, path)
-            if ring:
-                return ring
-        path.pop()
-        return None
-
-    def _break_ring(self, ring):
-        min_weight = float("inf")
-        for i in range(len(ring)):
-            lender, debtor = ring[i], ring[(i + 1) % len(ring)]
-            min_weight = min(min_weight, self.get_edge(lender, debtor))
-            self.log.debug(f"  new_min_weight: L[{lender}]-D[{debtor}] W[{min_weight}]")
-        for i in range(len(ring)):
-            lender, debtor = ring[i], ring[(i + 1) % len(ring)]
-            self.add_edge(lender, debtor, -min_weight)
-            self.log.debug(
-                f"    add_edge: L[{lender}]-D[{debtor}] dA[{-min_weight}] A[{self.get_flow(lender, debtor)}]"
-            )
-
-    def break_rings(self):
-        # Note that this may result in different new graph depending on the order of rings found.
-        for node in self.get_nodes():
-            self.log.debug(f"break rings start from: {node}")
-            while True:
-                ring = self._get_ring(node, self._adj_lt, path=[])
-                if ring is None:
-                    break
-                self._break_ring(ring)
 
     def dump(
         self,
@@ -120,62 +100,111 @@ class LendingGraph:
         return df
 
 
-def simplest_equiv(g: LendingGraph) -> LendingGraph:
-    equiv_g = LendingGraph()
+def check_equiv(g1: LendingGraph, g2: LendingGraph) -> bool:
+    if set(g1.get_nodes()) != set(g2.get_nodes()):
+        return False
+    for node in g1.get_nodes():
+        if not is_equal(g1.net_out_flow[node], g2.net_out_flow[node]):
+            return False
+    return True
 
-    def _reduce_match(out_flow, in_flow):
-        # TODO: This is a low-efficient impl with two nested-loops incurring O(2N^2)
-        um_out, um_in = [], []
-        for lender, out_f in out_flow:
-            matched = False
-            for i, (debtor, in_f) in enumerate(in_flow):
-                if math.isclose(out_f, in_f):
-                    equiv_g.add_edge(lender, debtor, out_f)
-                    del in_flow[i]
-                    matched = True
-                    break
-            if not matched:
-                um_out.append([lender, out_f])
 
-        for debtor, in_f in in_flow:
-            matched = False
-            for i, (lender, out_f) in enumerate(out_flow):
-                if math.isclose(out_f, in_f):
-                    equiv_g.add_edge(lender, debtor, out_f)
-                    del out_flow[i]
-                    matched = True
-                    break
-            if not matched:
-                um_in.append([debtor, in_f])
+def simplest_equiv(g: LendingGraph, log=logger) -> LendingGraph:
+    # Question modeling:
+    # Given two set of nodes (lenders and debtors), each of them corresponds to a value (amount).
+    # Sum of values of in the two sets are guaranteed to be the same.
+    # Construct a weighted graph with LEAST number of edges connecting nodes from two different sets.
+    # The sum of the weights of all edges connecting to a node should be equal to the node value.
 
-        return um_out, um_in
+    # Algorithm: DP
 
-    unmatched_out, unmatched_in = [], []
-    for node in g.get_nodes():
-        net_out = g.net_out_flow[node]
+    # def _status_tag(lenders, debtors) -> str:
+    #     tag = ""
+    #     for node in sorted(lenders):
+    #         tag += f"L({node}:{lenders[node]}),"
+    #     for node in sorted(debtors):
+    #         tag += f"D({node}:{debtors[node]}),"
+    #     return tag
+
+    # def _update_memo(tag: str, res: LendingGraph, memo: Dict) -> None:
+    #     if tag not in memo:
+    #         memo[tag] = res
+    #     else:
+    #         if memo[tag].num_edges() > res.num_edges():
+    #             memo[tag] = res
+
+    def _dict_all_zero(dt) -> bool:
+        for val in dt.values():
+            if not is_zero(val):
+                return False
+        return True
+
+    def _dp(
+        lenders: defaultdict,
+        debtors: defaultdict,
+        cur_g: LendingGraph,
+        # memo: Dict,
+        ans: LendingGraph = None,
+    ) -> LendingGraph:
+
+        log.debug("=" * 20)
+        log.debug("LEDNERS: ", lenders)
+        log.debug("DEBTORS: ", debtors)
+        log.debug("CUR_G:")
+        log.debug(cur_g.vis())
+        log.debug("ANS: ")
+        if ans is not None:
+            log.debug(ans.vis())
+
+        # tag = _status_tag(lenders, debtors)
+
+        if _dict_all_zero(lenders) and _dict_all_zero(debtors):
+            log.debug("Last layer of recursion.")
+            return (
+                deepcopy(cur_g)
+                if ans is None or cur_g.num_edges() < ans.num_edges()
+                else ans
+            )
+
+        for ldr in lenders.keys():
+            amount_ldr = lenders[ldr]
+            if is_zero(amount_ldr):
+                continue
+
+            for dbr in debtors.keys():
+                amount_dbr = debtors[dbr]
+                if is_zero(amount_dbr):
+                    continue
+
+                amount = min(amount_ldr, amount_dbr)
+
+                lenders[ldr] -= amount
+                debtors[dbr] -= amount
+                cur_g.add_edge(ldr, dbr, amount)
+
+                ans = _dp(lenders, debtors, cur_g, ans)
+                # if dp_ans != ans:
+                #     ans = dp_ans
+                # _update_memo(tag, cur_g)
+
+                lenders[ldr] += amount
+                debtors[dbr] += amount
+                cur_g.add_edge(ldr, dbr, -amount)
+
+        return ans
+
+    lenders, debtors = defaultdict(float), defaultdict(float)
+    for node, net_out in g.net_out_flow.items():
         if net_out > 0:
-            unmatched_out.append([node, net_out])
+            lenders[node] = net_out
         elif net_out < 0:
-            unmatched_in.append([node, -net_out])
+            debtors[node] = -net_out
 
-    unmatched_out, unmatched_in = _reduce_match(unmatched_out, unmatched_in)
+    equiv_g = _dp(lenders, debtors, LendingGraph())
 
-    while unmatched_in and unmatched_out:
-        max_out = max(unmatched_out, key=lambda x: x[1])
-        max_in = max(unmatched_in, key=lambda x: x[1])
-        flow = min(max_out[1], max_in[1])
-        equiv_g.add_edge(lender=max_out[0], debtor=max_in[0], amount=flow)
-        if max_out[1] <= max_in[1]:
-            max_in[1] -= flow
-            unmatched_out.remove(max_out)
-        else:
-            max_out[1] -= flow
-            unmatched_in.remove(max_in)
-        unmatched_out, unmatched_in = _reduce_match(unmatched_out, unmatched_in)
-
-    assert (
-        len(unmatched_in) == 0 and len(unmatched_out) == 0
-    ), f"in remained = {unmatched_in}, out remained = {unmatched_out}"
+    assert check_equiv(
+        g, equiv_g
+    ), f"G.NET_OUT = {g.net_out_flow}; EQ.NET_OUT = {equiv_g.net_out_flow}"
 
     return equiv_g
 
