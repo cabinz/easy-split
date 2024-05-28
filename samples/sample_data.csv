@@ -1,0 +1,35 @@
+Date,Item,Creditor,Debtor,Amount (pp.)
+1/1/2023,Airport bus,Alan,All,16000
+1/1/2023,T-money charging,Alan,Cabin,50000
+1/1/2023,Capsule train booking,Cabin,All,12500
+1/1/2023,"One-way Metro Ticket 
+(from Sungshin Women’s Univ. Station to Myeong-dong Station)",Alan,"Cathy, Vivian",1500
+1/1/2023,Dinner BBQ,Alan,All,52487.5
+1/1/2023,T-money + charging,Alan,"Cathy, Vivian",26000
+1/1/2023,Seoul Tower Cable Car (round-trip),Alan,All,15000
+1/1/2023,Fried Chicken and Coke,Alan,Cabin,14950
+1/1/2023,Bagel at the airport,Cabin,Cathy,2900
+1/1/2023,Drinks/Bagel at the airport,Cathy,Vivian,3400
+2/1/2023,Life four-panel,Cathy,All,2500
+2/1/2023,"Taxi 
+(from Cheonggyechun to Friendly DH)",Cathy,All,4350
+2/1/2023,Onion Anguk,Cabin,All,15500
+2/1/2023,Gyeongbokgung Ticket,Cabin,Alan,3000
+2/1/2023,Lunch Potato Soup,Cabin,All,11250
+2/1/2023,Dinner BBQ,Cabin,All,16000
+2/1/2023,BHC fried chicken,Cabin,"Alan, Cathy",12500
+2/1/2023,Street painting for a friend,Vivian,Alan,22500
+2/1/2023,Lunch in the lib mall,Cathy,All,18275
+2/1/2023,Rental of a mat at Hangang Park,Cathy,All,1250
+2/1/2023,Dinner near KU,Cathy,All,6375
+2/1/2023,Juice in KU,Cathy,All,5075
+3/1/2023,Taxi to Hangang Park,Cabin,All,4475
+3/1/2023,Taxi to KU,Cabin,All,4925
+3/1/2023,Taxi from KU back to DH,Cabin,"Alan, Vivian",2533.33
+3/1/2023,Lunch at Seoul Station,Vivian,Cathy,8500
+3/1/2023,Lunch at Seoul Station,Vivian,Cabin,14000
+3/1/2023,Lunch at Seoul Station,Vivian,Alan,12000
+3/1/2023,Taxi to cable car,Vivian,All,3375
+3/1/2023,Cable car,Vivian,All,22000
+3/1/2023,Snacks at geo park,Vivian,All,3500
+3/1/2023,Taxi to night market,Vivian,All,1500

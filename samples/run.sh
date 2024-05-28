@@ -1,0 +1,1 @@
+python run.py --file "samples/sample_data.csv" --primary_currency "KR₩"   --secondary_currency "HK$"  --exchange_rate 0.0057715

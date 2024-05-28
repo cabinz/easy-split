@@ -16,7 +16,7 @@ class Loader:
     def __init__(
         self,
         data_file: str,
-        col_lender: str,
+        col_creditor: str,
         col_debtor: str,
         col_pp_amount: str,
         separator: str = ",",
@@ -27,18 +27,18 @@ class Loader:
         assert data_file.suffix == ".csv", f"Unsupported format {data_file.suffix}"
 
         self._data_file = data_file
-        self._col_lender = col_lender
+        self._col_creditor = col_creditor
         self._col_debtor = col_debtor
         self._col_pp = col_pp_amount
         self._separator = separator
 
-        self._df = pd.read_csv(self._data_file)
+        self._df = pd.read_csv(self._data_file, sep=self._separator)
 
         self._members = set()
         for index, row in self._df.iterrows():
-            if row[self._col_lender].lower() != "all":
+            if row[self._col_creditor].lower() != "all":
                 self._members.update(
-                    split_names(row[self._col_lender], self._separator)
+                    split_names(row[self._col_creditor], self._separator)
                 )
             if row[self._col_debtor].lower() != "all":
                 self._members.update(
@@ -47,15 +47,15 @@ class Loader:
 
         self._g = graph.LendingGraph()
         for index, row in self._df.iterrows():
-            lender = row[self._col_lender]
+            creditor = row[self._col_creditor]
             if row[self._col_debtor].lower() == "all":
                 debtors = self._members.copy()
-                debtors.remove(lender)
+                debtors.remove(creditor)
             else:
                 debtors = split_names(row[self._col_debtor])
 
             for debtor in debtors:
-                self._g.add_edge(lender, debtor, row[self._col_pp])
+                self._g.add_edge(creditor, debtor, row[self._col_pp])
 
     def get_graph(self):
         return self._g
@@ -68,18 +68,4 @@ class Loader:
 
 
 if __name__ == "__main__":
-    file_path = "data/test_cyc.csv"
-
-    loader = Loader(
-        file_path,
-        col_lender="Payer",
-        col_debtor="Pay for",
-        col_pp_amount="Amount (pp.)",
-    )
-    print(f"Members: {loader.get_members()}")
-
-    g = loader.get_graph()
-    g.vis()
-
-    df = loader.get_data()
-    print(df)
+    pass

@@ -30,47 +30,47 @@ class LendingGraph:
 
     def vis(self) -> str:
         s = ""
-        for lender in self._adj_lt.keys():
-            for debtor, amount in self._adj_lt[lender].items():
-                s += f"{lender} --{amount:.2f}--> {debtor}\n"
+        for creditor in self._adj_lt.keys():
+            for debtor, amount in self._adj_lt[creditor].items():
+                s += f"{creditor} --{amount:.2f}--> {debtor}\n"
         return s.strip()
 
     def get_nodes(self) -> List[str]:
         lt = set(self._adj_lt.keys())
-        for lender in self._adj_lt.keys():
-            lt.update(list(self._adj_lt[lender].keys()))
+        for creditor in self._adj_lt.keys():
+            lt.update(list(self._adj_lt[creditor].keys()))
         return list(set(lt))
 
-    def add_edge(self, lender, debtor, amount) -> None:
+    def add_edge(self, creditor, debtor, amount) -> None:
         assert (
-            lender != debtor
-        ), f"Lender and debtor ({lender}) should not be the same one!"
-        self._adj_lt[lender][debtor] += amount
-        self.net_out_flow[lender] += amount
+            creditor != debtor
+        ), f"creditor and debtor ({creditor}) should not be the same one!"
+        self._adj_lt[creditor][debtor] += amount
+        self.net_out_flow[creditor] += amount
         self.net_out_flow[debtor] -= amount
-        if is_zero(self._adj_lt[lender][debtor]):
-            self.remove_edge(lender, debtor)
+        if is_zero(self._adj_lt[creditor][debtor]):
+            self.remove_edge(creditor, debtor)
 
-    def has_edge(self, lender, debtor) -> bool:
-        return lender in self._adj_lt and debtor in self._adj_lt[lender]
+    def has_edge(self, creditor, debtor) -> bool:
+        return creditor in self._adj_lt and debtor in self._adj_lt[creditor]
 
-    def get_edge(self, lender, debtor) -> float:
-        assert self.has_edge(lender, debtor)
-        return self._adj_lt[lender][debtor]
+    def get_edge(self, creditor, debtor) -> float:
+        assert self.has_edge(creditor, debtor)
+        return self._adj_lt[creditor][debtor]
 
-    def get_edges(self, lender) -> List[Tuple]:
-        return self._adj_lt[lender]
+    def get_edges(self, creditor) -> List[Tuple]:
+        return self._adj_lt[creditor]
 
     def num_edges(self) -> int:
-        return sum(len(lender) for lender in self._adj_lt)
+        return sum(len(creditor) for creditor in self._adj_lt)
 
-    def get_flow(self, lender, debtor) -> float:
-        return self._adj_lt[lender][debtor] if self.has_edge(lender, debtor) else 0.0
+    def get_flow(self, creditor, debtor) -> float:
+        return self._adj_lt[creditor][debtor] if self.has_edge(creditor, debtor) else 0.0
 
-    def remove_edge(self, lender, debtor) -> float:
-        amount = self.get_edge(lender, debtor)
-        self._adj_lt[lender].pop(debtor, None)
-        self.net_out_flow[lender] -= amount
+    def remove_edge(self, creditor, debtor) -> float:
+        amount = self.get_edge(creditor, debtor)
+        self._adj_lt[creditor].pop(debtor, None)
+        self.net_out_flow[creditor] -= amount
         self.net_out_flow[debtor] += amount
         return amount
 
@@ -79,22 +79,22 @@ class LendingGraph:
 
     def dump(
         self,
-        col_lender: str = "Lender",
+        col_creditor: str = "Creditor",
         col_debtor: str = "Debtor",
         col_amount: str = "Amount",
     ) -> pd.DataFrame:
         # Create an empty DataFrame
         data_types = {
-            col_lender: "object",  # 'object' is typically used for strings
+            col_creditor: "object",  # 'object' is typically used for strings
             col_debtor: "object",
             col_amount: "float64",  # 'float64' for floating point numbers
         }
         df = pd.DataFrame(columns=data_types.keys()).astype(data_types)
 
-        for lender in self._adj_lt:
-            for debtor in self._adj_lt[lender]:
-                amount = self.get_flow(lender, debtor)
-                new_row = pd.DataFrame([[lender, debtor, amount]], columns=df.columns)
+        for creditor in self._adj_lt:
+            for debtor in self._adj_lt[creditor]:
+                amount = self.get_flow(creditor, debtor)
+                new_row = pd.DataFrame([[creditor, debtor, amount]], columns=df.columns)
                 df = pd.concat([df, new_row], ignore_index=True)
 
         return df
@@ -111,17 +111,17 @@ def check_equiv(g1: LendingGraph, g2: LendingGraph) -> bool:
 
 def simplest_equiv(g: LendingGraph, log=logger) -> LendingGraph:
     # Question modeling:
-    # Given two set of nodes (lenders and debtors), each of them corresponds to a value (amount).
+    # Given two set of nodes (creditors and debtors), each of them corresponds to a value (amount).
     # Sum of values of in the two sets are guaranteed to be the same.
     # Construct a weighted graph with LEAST number of edges connecting nodes from two different sets.
     # The sum of the weights of all edges connecting to a node should be equal to the node value.
 
     # Algorithm: DP
 
-    # def _status_tag(lenders, debtors) -> str:
+    # def _status_tag(creditors, debtors) -> str:
     #     tag = ""
-    #     for node in sorted(lenders):
-    #         tag += f"L({node}:{lenders[node]}),"
+    #     for node in sorted(creditors):
+    #         tag += f"L({node}:{creditors[node]}),"
     #     for node in sorted(debtors):
     #         tag += f"D({node}:{debtors[node]}),"
     #     return tag
@@ -140,7 +140,7 @@ def simplest_equiv(g: LendingGraph, log=logger) -> LendingGraph:
         return True
 
     def _dp(
-        lenders: defaultdict,
+        creditors: defaultdict,
         debtors: defaultdict,
         cur_g: LendingGraph,
         # memo: Dict,
@@ -148,7 +148,7 @@ def simplest_equiv(g: LendingGraph, log=logger) -> LendingGraph:
     ) -> LendingGraph:
 
         log.debug("=" * 20)
-        log.debug("LEDNERS: ", lenders)
+        log.debug("LEDNERS: ", creditors)
         log.debug("DEBTORS: ", debtors)
         log.debug("CUR_G:")
         log.debug(cur_g.vis())
@@ -156,9 +156,9 @@ def simplest_equiv(g: LendingGraph, log=logger) -> LendingGraph:
         if ans is not None:
             log.debug(ans.vis())
 
-        # tag = _status_tag(lenders, debtors)
+        # tag = _status_tag(creditors, debtors)
 
-        if _dict_all_zero(lenders) and _dict_all_zero(debtors):
+        if _dict_all_zero(creditors) and _dict_all_zero(debtors):
             log.debug("Last layer of recursion.")
             return (
                 deepcopy(cur_g)
@@ -166,8 +166,8 @@ def simplest_equiv(g: LendingGraph, log=logger) -> LendingGraph:
                 else ans
             )
 
-        for ldr in lenders.keys():
-            amount_ldr = lenders[ldr]
+        for ldr in creditors.keys():
+            amount_ldr = creditors[ldr]
             if is_zero(amount_ldr):
                 continue
 
@@ -178,29 +178,29 @@ def simplest_equiv(g: LendingGraph, log=logger) -> LendingGraph:
 
                 amount = min(amount_ldr, amount_dbr)
 
-                lenders[ldr] -= amount
+                creditors[ldr] -= amount
                 debtors[dbr] -= amount
                 cur_g.add_edge(ldr, dbr, amount)
 
-                ans = _dp(lenders, debtors, cur_g, ans)
+                ans = _dp(creditors, debtors, cur_g, ans)
                 # if dp_ans != ans:
                 #     ans = dp_ans
                 # _update_memo(tag, cur_g)
 
-                lenders[ldr] += amount
+                creditors[ldr] += amount
                 debtors[dbr] += amount
                 cur_g.add_edge(ldr, dbr, -amount)
 
         return ans
 
-    lenders, debtors = defaultdict(float), defaultdict(float)
+    creditors, debtors = defaultdict(float), defaultdict(float)
     for node, net_out in g.net_out_flow.items():
         if net_out > 0:
-            lenders[node] = net_out
+            creditors[node] = net_out
         elif net_out < 0:
             debtors[node] = -net_out
 
-    equiv_g = _dp(lenders, debtors, LendingGraph())
+    equiv_g = _dp(creditors, debtors, LendingGraph())
 
     assert check_equiv(
         g, equiv_g
