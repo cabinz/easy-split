@@ -1,10 +1,26 @@
+from . import graph
+from .config import *
+
+from typing import List
 import pandas as pd
 from pathlib import Path
-import graph
-from typing import List
 
 """Represent the loader to load records as a lending graph from the data file as required.
 """
+
+# class LoaderConfig:
+#     def __init__(self, col_creditor, col_debtor, col_pp_amount):
+#         self.col_creditor = col_creditor
+#         self.col_debtor = col_debtor
+#         self.col_pp_amount = col_pp_amount
+
+#     @classmethod
+#     def from_args(cls, args):
+#         return cls(
+#             args.col_creditor,
+#             args.col_debtor,
+#             args.col_pp_amount,
+#         )
 
 
 def split_names(s_names: str, splitter: str = ",") -> List[str]:
@@ -65,7 +81,3 @@ class Loader:
 
     def get_members(self):
         return self._members
-
-
-if __name__ == "__main__":
-    pass

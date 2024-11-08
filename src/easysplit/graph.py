@@ -1,11 +1,10 @@
+from .utils.logger import get_logger
+
 from copy import deepcopy
 import pandas as pd
 from typing import List, Tuple, Dict
 from collections import defaultdict
 import math
-
-from utils.logger import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -94,7 +93,8 @@ class LendingGraph:
         for creditor in self._adj_lt:
             for debtor in self._adj_lt[creditor]:
                 amount = self.get_flow(creditor, debtor)
-                new_row = pd.DataFrame([[creditor, debtor, amount]], columns=df.columns)
+                new_row = pd.DataFrame(
+                    [[creditor, debtor, amount]], columns=df.columns)
                 df = pd.concat([df, new_row], ignore_index=True)
 
         return df
