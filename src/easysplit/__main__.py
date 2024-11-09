@@ -30,9 +30,9 @@ def main():
         help=f'Column name for debtors in the sheet. Default as "{DEFAULT_COL_DEBTOR}".',
     )
     parser.add_argument(
-        "--col_pp_amount",
-        default=DEFAULT_COL_PP_AMOUNT,
-        help=f"Column name for per-person lending amount in the sheet. Default as '{DEFAULT_COL_PP_AMOUNT}'",
+        "--col_tot_amount",
+        default=DEFAULT_COL_TOT_AMOUNT,
+        help=f"Column name for total lending amount (from the creditor) in the sheet. Default as '{DEFAULT_COL_TOT_AMOUNT}'",
     )
 
     parser.add_argument(
