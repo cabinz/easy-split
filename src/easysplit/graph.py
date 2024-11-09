@@ -83,6 +83,7 @@ class LendingGraph:
         col_creditor: str = "Creditor",
         col_debtor: str = "Debtor",
         col_amount: str = "Amount",
+        precision: int = 2,
     ) -> pd.DataFrame:
         # Create an empty DataFrame
         data_types = {
@@ -94,7 +95,7 @@ class LendingGraph:
 
         for creditor in self._adj_lt:
             for debtor in self._adj_lt[creditor]:
-                amount = self.get_flow(creditor, debtor)
+                amount = round(self.get_flow(creditor, debtor), precision)
                 new_row = pd.DataFrame(
                     [[creditor, debtor, amount]], columns=df.columns)
                 df = pd.concat([df, new_row], ignore_index=True)
