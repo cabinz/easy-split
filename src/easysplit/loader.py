@@ -2,6 +2,7 @@
 """
 
 from . import graph
+from .exr import ExchangeRates
 from .config import *
 
 from typing import List
@@ -14,12 +15,14 @@ class DataFormat:
                  col_creditor=DEFAULT_COL_CREDITOR,
                  col_debtor=DEFAULT_COL_DEBTOR,
                  col_tot_amount=DEFAULT_COL_TOT_AMOUNT,
+                 col_currency=DEFAULT_COL_CURRENCY,
                  separator=DEFAULT_SEP,  # separator for multiple names
                  all_selector=DEFAULT_ALL_SELECTOR,
                  ) -> None:
         self.col_creditor = col_creditor
         self.col_debtor = col_debtor
         self.col_tot_amount = col_tot_amount
+        self.col_currency = col_currency
         self.separator = separator
         self.all_selector = all_selector
 
@@ -29,6 +32,7 @@ class DataFormat:
             args.col_creditor,
             args.col_debtor,
             args.col_tot_amount,
+            args.col_currency,
             args.separator,
             args.all_selector,
         )
@@ -43,10 +47,13 @@ SUPPORT_FTYPES = {
 
 
 class Loader:
+    METACOLN_STD_TOT_AMOUNT = "Total Amount (Standard Currency)"
+
     def __init__(
         self,
         file_path: str,
         cfg: DataFormat = DataFormat(),
+        exrs: ExchangeRates = None,
     ) -> None:
         file_path = Path(file_path)
         assert file_path.exists(), f"The given path {file_path} does NOT exist"
@@ -63,6 +70,16 @@ class Loader:
         self._file_path = file_path
         self._df = SUPPORT_FTYPES[self._file_path.suffix](self._file_path)
         self._cfg = cfg
+        
+        if exrs is not None:
+            self._exrs = exrs
+            self._df[self.METACOLN_STD_TOT_AMOUNT] = self._df.apply(
+                lambda row: exrs.to_std(row[cfg.col_currency], row[cfg.col_tot_amount]),
+                axis=1,
+            )
+        else:
+            print("No exchange rates provided. Run in the currency-agnostic way.")
+            self._df[self.METACOLN_STD_TOT_AMOUNT] = self._df[cfg.col_tot_amount]
         
         def _split_names(s_names: str, splitter: str = DEFAULT_SEP) -> List[str]:
             names = [name.strip() for name in s_names.split(splitter)]
@@ -91,7 +108,7 @@ class Loader:
             else:
                 debtors = _split_names(row[self._cfg.col_debtor])
             
-            pp_amount = row[self._cfg.col_tot_amount] / len(debtors)
+            pp_amount = row[self.METACOLN_STD_TOT_AMOUNT] / len(debtors)
             if creditor in debtors:  # TODO: unnecessary, self-loop and be eliminated in the graph
                 debtors.remove(creditor)
             for debtor in debtors:

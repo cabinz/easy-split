@@ -2,6 +2,7 @@
 
 from .config import *
 from .loader import Loader, DataFormat
+from .exr import ExchangeRates
 from . import graph
 
 import argparse
@@ -34,6 +35,11 @@ def main():
         default=DEFAULT_COL_TOT_AMOUNT,
         help=f"Column name for total lending amount (from the creditor) in the sheet. Default as '{DEFAULT_COL_TOT_AMOUNT}'",
     )
+    parser.add_argument(
+        "--col_currency",
+        default=DEFAULT_COL_CURRENCY,
+        help=f"Column name for transation currency. Default as '{DEFAULT_COL_CURRENCY}'",
+    )
 
     parser.add_argument(
         "--separator", 
@@ -47,20 +53,17 @@ def main():
     )
     
     parser.add_argument(
-        "--primary_currency",
+        "--standard_currency",
         type=str,
-        help='The currency name for computation. eg. "HK$".',
-    )
-    parser.add_argument(
-        "--secondary_currency",
-        type=str,
-        help='The currency name to be converted to by the given exchange rate. eg. "KRW".',
+        help='The currency for settlement (ie., to be displayed in results). eg., "HKD".',
     )
     parser.add_argument(
         "--exchange_rate",
-        type=float,
-        help="Conversion rate from primary to secondary currency. eg. 5.7715e-3",
+        type=str,
+        action="append",
+        help="Exchange rate. BASE/QUOTE=x means 1 BASE is converted to x QUOTE. eg., USD/HKD=7.8",
     )
+    
     parser.add_argument(
         "--dump_path",
         type=str,
@@ -68,21 +71,23 @@ def main():
     )
 
     args = parser.parse_args()
-    col_amount = (
-        "Amount"
-        if not hasattr(args, "primary_currency")
-        else f"Amount ({args.primary_currency})"
-    )
-    col_2nd_amount = (
-        None
-        if not hasattr(args, "secondary_currency")
-        else f"Amount ({args.secondary_currency})"
-    )
     
+    ####
+    exrs = None
+    if args.standard_currency:
+        print(f"Standard currency for results: {args.standard_currency}")
+        exrs = ExchangeRates(args.standard_currency)
+        if args.exchange_rate:
+            for s in args.exchange_rate: # s = 'BASE/QUOTE=x'
+                base_quote, rate = s.split("=")
+                base, quote = base_quote.split("/")
+                exrs.add_rate(base, quote, float(rate))
+                print(f"Registered exchange rate {base}/{quote} = {rate}")
     
     loader = Loader(
         args.file,
         DataFormat.from_args(args),
+        exrs
     )
 
     print(f"Members:", ", ".join(loader.get_members()))
@@ -99,40 +104,30 @@ def main():
     print("Creditors:")
     for name, amount in creditors:
         print(
-            "\t{}: {}{:.2f}{}".format(
+            "\t{}: {}{:.2f}".format(
                 name,
-                args.primary_currency if hasattr(
-                    args, "primary_currency") else "",
+                args.standard_currency if hasattr(
+                    args, "standard_currency") else "",
                 amount,
-                (
-                    f" ({args.secondary_currency}{amount * args.exchange_rate:.2f})"
-                    if hasattr(args, "secondary_currency")
-                    else ""
-                ),
             )
         )
     print("Debtors")
     for name, amount in debtors:
         print(
-            "\t{}: {}{:.2f}{}".format(
+            "\t{}: {}{:.2f}".format(
                 name,
-                args.primary_currency if hasattr(
-                    args, "primary_currency") else "",
+                args.standard_currency if hasattr(
+                    args, "standard_currency") else "",
                 amount,
-                (
-                    f" ({args.secondary_currency}{amount * args.exchange_rate:.2f})"
-                    if hasattr(args, "secondary_currency")
-                    else ""
-                ),
             )
         )
     print(SPLIT_LN)
 
     equiv = graph.simplest_equiv(g)
-    dumped_df = equiv.dump(col_amount=col_amount)
-    if col_2nd_amount:
-        dumped_df[col_2nd_amount] = round(
-            dumped_df[col_amount] * args.exchange_rate, 2)
+    coln_amount = ("Amount" 
+                   if not hasattr(args, "standard_currency") 
+                   else f"Amount ({args.standard_currency})")
+    dumped_df = equiv.dump(col_amount=coln_amount)
 
     print("Simplest bill splitting scheme:")
     print(dumped_df)
