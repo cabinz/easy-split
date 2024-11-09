@@ -65,14 +65,19 @@ def main():
     )
     
     parser.add_argument(
-        "--dump_path",
+        "--result_dump_path",
         type=str,
         help='File path to dump the output sheet. eg. "path/to/out.csv".',
+    )
+    parser.add_argument(
+        "--details_dump_path",
+        type=str,
+        help='File path to dump the detailed preprocessed record sheet. eg. "path/to/details.csv".',
     )
 
     args = parser.parse_args()
     
-    ####
+    ########################################
     exrs = None
     if args.standard_currency:
         print(f"Standard currency for results: {args.standard_currency}")
@@ -131,8 +136,11 @@ def main():
 
     print("Simplest bill splitting scheme:")
     print(dumped_df)
+    print(SPLIT_LN)
 
-    if hasattr(args, "dump_path"):
-        dumped_df.to_csv(args.dump_path)
-        print(SPLIT_LN)
-        print(f"Results are dumped to {args.dump_path}")
+    if hasattr(args, "result_dump_path"):
+        dumped_df.to_csv(args.result_dump_path)
+        print(f"Results are dumped to {args.result_dump_path}")
+    if hasattr(args, "details_dump_path"):
+        loader.get_preprocessed_data().to_csv(args.details_dump_path)
+        print(f"Proprocessing details are dumped to {args.details_dump_path}")

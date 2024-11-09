@@ -47,8 +47,6 @@ SUPPORT_FTYPES = {
 
 
 class Loader:
-    METACOLN_STD_TOT_AMOUNT = "Total Amount (Standard Currency)"
-
     def __init__(
         self,
         file_path: str,
@@ -72,14 +70,15 @@ class Loader:
         self._cfg = cfg
         
         if exrs is not None:
+            self._metacoln_std_tot_amount = f"Total Amount ({exrs.std_currency})"
             self._exrs = exrs
-            self._df[self.METACOLN_STD_TOT_AMOUNT] = self._df.apply(
+            self._df[self._metacoln_std_tot_amount] = self._df.apply(
                 lambda row: exrs.to_std(row[cfg.col_currency], row[cfg.col_tot_amount]),
                 axis=1,
             )
         else:
             print("No exchange rates provided. Run in the currency-agnostic way.")
-            self._df[self.METACOLN_STD_TOT_AMOUNT] = self._df[cfg.col_tot_amount]
+            self._df[self._metacoln_std_tot_amount] = self._df[cfg.col_tot_amount]
         
         def _split_names(s_names: str, splitter: str = DEFAULT_SEP) -> List[str]:
             names = [name.strip() for name in s_names.split(splitter)]
@@ -108,7 +107,7 @@ class Loader:
             else:
                 debtors = _split_names(row[self._cfg.col_debtor])
             
-            pp_amount = row[self.METACOLN_STD_TOT_AMOUNT] / len(debtors)
+            pp_amount = row[self._metacoln_std_tot_amount] / len(debtors)
             if creditor in debtors:  # TODO: unnecessary, self-loop and be eliminated in the graph
                 debtors.remove(creditor)
             for debtor in debtors:
@@ -122,3 +121,6 @@ class Loader:
 
     def get_members(self):
         return self._members
+    
+    def get_preprocessed_data(self):
+        return self._df

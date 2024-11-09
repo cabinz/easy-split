@@ -15,7 +15,7 @@ from collections import defaultdict
 
 class ExchangeRates:
     def __init__(self, std_currency: str = "HKD") -> None:
-        self._std_currency = std_currency
+        self.std_currency = std_currency
         self._rates = defaultdict(dict)
         
     def add_rate(self, base_currency: str, quote_currency: str, rate: float) -> None:
@@ -32,4 +32,4 @@ class ExchangeRates:
         return self._rates[base_currency][quote_currency]
 
     def to_std(self, from_currency: str, amount: float) -> float:
-        return amount * self.get_rate(from_currency, self._std_currency)
+        return amount * self.get_rate(from_currency, self.std_currency)
