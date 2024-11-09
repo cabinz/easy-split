@@ -1,5 +1,7 @@
+"""CLI entry of the package."""
+
 from .config import *
-from .loader import Loader
+from .loader import Loader, DataFormat
 from . import graph
 
 import argparse
@@ -20,22 +22,30 @@ def main():
     parser.add_argument(
         "--col_creditor",
         default=DEFAULT_COL_CREDITOR,
-        help='Column name for creditors in the sheet. Default as "Creditor".',
+        help=f'Column name for creditors in the sheet. Default as "{DEFAULT_COL_CREDITOR}".',
     )
     parser.add_argument(
         "--col_debtor",
         default=DEFAULT_COL_DEBTOR,
-        help='Column name for debtors in the sheet. Default as "Debtor".',
+        help=f'Column name for debtors in the sheet. Default as "{DEFAULT_COL_DEBTOR}".',
     )
     parser.add_argument(
         "--col_pp_amount",
         default=DEFAULT_COL_PP_AMOUNT,
-        help="Column name for per-person lending amount in the sheet.",
+        help=f"Column name for per-person lending amount in the sheet. Default as '{DEFAULT_COL_PP_AMOUNT}'",
     )
 
     parser.add_argument(
-        "--sep", default=",", help="Separator for input data. Default as comma (CSV file)"
+        "--separator", 
+        default=DEFAULT_SEP, 
+        help=f"Separator for splitting names in a cell. Default as comma '{DEFAULT_SEP}'."
     )
+    parser.add_argument(
+        "--all_selector", 
+        default=DEFAULT_ALL_SELECTOR, 
+        help=f"String specifying all members memtioned in the data. Default as '{DEFAULT_ALL_SELECTOR}'."
+    )
+    
     parser.add_argument(
         "--primary_currency",
         type=str,
@@ -68,13 +78,11 @@ def main():
         if not hasattr(args, "secondary_currency")
         else f"Amount ({args.secondary_currency})"
     )
-
+    
+    
     loader = Loader(
         args.file,
-        col_creditor=args.col_creditor,
-        col_debtor=args.col_debtor,
-        col_pp_amount=args.col_pp_amount,
-        separator=args.sep,
+        DataFormat.from_args(args),
     )
 
     print(f"Members:", ", ".join(loader.get_members()))

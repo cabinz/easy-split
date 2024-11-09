@@ -1,3 +1,5 @@
+"""Graph data structure for lending flows."""
+
 from .utils.logger import get_logger
 
 from copy import deepcopy
