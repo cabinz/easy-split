@@ -34,6 +34,7 @@ class DataFormat:
         )
 
 
+
 SUPPORT_FTYPES = {
     ".csv": lambda x: pd.read_csv(x),
     ".tsv": lambda x: pd.read_csv(x, sep="\t"),
@@ -45,7 +46,7 @@ class Loader:
     def __init__(
         self,
         file_path: str,
-        cfg: DataFormat,
+        cfg: DataFormat = DataFormat(),
     ) -> None:
         file_path = Path(file_path)
         assert file_path.exists(), f"The given path {file_path} does NOT exist"
@@ -63,7 +64,7 @@ class Loader:
         self._df = SUPPORT_FTYPES[self._file_path.suffix](self._file_path)
         self._cfg = cfg
         
-        def _split_names(s_names: str, splitter: str = ",") -> List[str]:
+        def _split_names(s_names: str, splitter: str = DEFAULT_SEP) -> List[str]:
             names = [name.strip() for name in s_names.split(splitter)]
             return names
         
