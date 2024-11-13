@@ -69,8 +69,10 @@ class Loader:
         self._df = SUPPORT_FTYPES[self._file_path.suffix](self._file_path)
         self._cfg = cfg
         
+        
+        self._metacoln_std_tot_amount = f"Total Amount"
         if exrs is not None:
-            self._metacoln_std_tot_amount = f"Total Amount ({exrs.std_currency})"
+            self._metacoln_std_tot_amount += f" ({exrs.std_currency})"
             self._exrs = exrs
             self._df[self._metacoln_std_tot_amount] = self._df.apply(
                 lambda row: exrs.to_std(row[cfg.col_currency], row[cfg.col_tot_amount]),
