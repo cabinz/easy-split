@@ -111,8 +111,8 @@ def main():
         print(
             "\t{}: {}{:.2f}".format(
                 name,
-                args.standard_currency if hasattr(
-                    args, "standard_currency") else "",
+                args.standard_currency if args.standard_currency is not None
+                     else "",
                 amount,
             )
         )
@@ -121,26 +121,25 @@ def main():
         print(
             "\t{}: {}{:.2f}".format(
                 name,
-                args.standard_currency if hasattr(
-                    args, "standard_currency") else "",
+                args.standard_currency if args.standard_currency is not None 
+                    else "",
                 amount,
             )
         )
     print(SPLIT_LN)
 
     equiv = graph.simplest_equiv(g)
-    coln_amount = ("Amount" 
-                   if not hasattr(args, "standard_currency") 
-                   else f"Amount ({args.standard_currency})")
+    coln_amount = (f"Amount ({args.standard_currency})" if args.standard_currency is not None 
+                    else "Amount")
     dumped_df = equiv.dump(col_amount=coln_amount)
 
     print("Simplest bill splitting scheme:")
     print(dumped_df)
     print(SPLIT_LN)
 
-    if hasattr(args, "result_dump_path"):
+    if args.result_dump_path is not None:
         dumped_df.to_csv(args.result_dump_path)
         print(f"Results are dumped to {args.result_dump_path}")
-    if hasattr(args, "details_dump_path"):
+    if args.details_dump_path is not None:
         loader.get_preprocessed_data().to_csv(args.details_dump_path)
         print(f"Proprocessing details are dumped to {args.details_dump_path}")
