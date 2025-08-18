@@ -10,33 +10,59 @@ EasySplit is a Python-based bill splitting tool designed for group trips. It pro
 
 ### Installation
 ```bash
-pip install .
+# Install with uv (recommended)
+uv pip install -e .
+
+# Or with pip
+pip install -e .
+```
+
+### Running Tests
+```bash
+# Run all tests
+uv run pytest
+
+# Run specific test file
+uv run pytest tests/test_auto_detect.py -v
+
+# Run integration tests
+uv run pytest tests/test_integration.py -v
 ```
 
 ### Running the CLI tool
 ```bash
-# Basic usage with exchange rates
+# Basic usage with auto-detection (detects Payer/Payee or Creditor/Debtor columns)
 splitbill \
     --file "path/to/data.xlsx" \
     --standard_currency "HKD" \
     --exchange_rate "KRW/HKD=0.0057715"
 
-# With custom column names
+# With custom column names (overrides auto-detection)
 splitbill \
     --file "path/to/data.xlsx" \
-    --col_creditor "Payer" \
-    --col_debtor "Payee" \
+    --col_creditor "From" \
+    --col_debtor "To" \
+    --col_tot_amount "Value" \
     --standard_currency "CNY" \
     --exchange_rate "HKD/CNY=0.9177"
+
+# Validate data without processing
+splitbill \
+    --file "path/to/data.xlsx" \
+    --standard_currency "USD" \
+    --validate-only
 ```
 
 ### Development
 ```bash
 # Install in editable mode for development
-pip install -e .
+uv pip install -e .
 
-# Run the module directly
-python -m easysplit --file "samples/sample_data.xlsx" --standard_currency "HKD"
+# Run the module directly with uv
+uv run python -m easysplit --file "samples/sample_data.csv" --standard_currency "HKD"
+
+# Run sample script
+uv run bash samples/run.sh
 ```
 
 ## Architecture
@@ -51,6 +77,9 @@ python -m easysplit --file "samples/sample_data.xlsx" --standard_currency "HKD"
 2. **Data Loading** (`src/easysplit/loader.py`)
    - `Loader` class: Loads and preprocesses transaction data from spreadsheets
    - `DataFormat` class: Encapsulates column naming and data format configuration
+     - Auto-detects column names (Payer/Payee or Creditor/Debtor)
+     - Case-insensitive column detection
+     - Supports mixed column combinations (e.g., Payer + Debtor)
    - Supports CSV, TSV, and Excel formats
    - Handles member extraction and transaction normalization
 
@@ -66,8 +95,16 @@ python -m easysplit --file "samples/sample_data.xlsx" --standard_currency "HKD"
    - Converts all amounts to a standard currency for settlement
 
 5. **Configuration** (`src/easysplit/config.py`)
+   - Column name aliases for auto-detection
+   - All selector aliases ("all", "*", "ALL", "All")
    - Default column names and separators
    - Configurable via CLI arguments
+
+6. **Data Validation** (`src/easysplit/validator.py`)
+   - Validates data structure and required columns
+   - Checks for missing or invalid values
+   - Validates currency exchange rates
+   - Provides helpful error messages with column name suggestions
 
 ### Data Flow
 
@@ -80,14 +117,22 @@ python -m easysplit --file "samples/sample_data.xlsx" --standard_currency "HKD"
 
 ### Key Implementation Details
 
+- **Auto-detection**: The system automatically detects column names from predefined aliases
+  - Creditor columns: "Creditor", "Payer"
+  - Debtor columns: "Debtor", "Payee"
+  - Amount columns: "Amount", "Total"
+  - Currency columns: "Currency", "Curr"
+- **All selector flexibility**: Supports multiple formats ("all", "*", "ALL", "All") for indicating all members
 - The graph simplification algorithm works by matching creditors and debtors to minimize the total number of transactions
-- Members can be specified individually or using an "all" selector (default: "all", customizable)
+- Members can be specified individually or using an "all" selector
 - Multiple people can be listed in a single cell, separated by comma (customizable separator)
 - The system maintains floating-point tolerance (ABS_TOL = 1e-02) for amount comparisons
 
 ## Important Notes
 
-- The `src/tests/` directory contains manual debugging scripts, not formal unit tests
+- The `tests/` directory contains pytest unit and integration tests
+- The `src/tests/` directory contains manual debugging scripts (not formal tests)
 - The project uses Python 3.10+ features
 - All currency conversions are applied before graph simplification
 - The tool is read-only on input files and only writes to specified output paths
+- Column name detection is case-insensitive and prioritizes user-specified values over auto-detection
