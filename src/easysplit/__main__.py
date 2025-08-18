@@ -3,9 +3,13 @@
 from .config import *
 from .loader import Loader, DataFormat
 from .exr import ExchangeRates
+from .validator import DataValidator, ValidationResult
 from . import graph
 
 import argparse
+import pandas as pd
+from pathlib import Path
+import sys
 
 SPLIT_LN = "=" * 20
 
@@ -74,10 +78,36 @@ def main():
         type=str,
         help='File path to dump the detailed preprocessed record sheet. eg. "path/to/details.csv".',
     )
+    parser.add_argument(
+        "--validate-only",
+        action="store_true",
+        help="Only validate the input data without processing.",
+    )
 
     args = parser.parse_args()
     
     ########################################
+    # Load data file for validation
+    file_path = Path(args.file)
+    if not file_path.exists():
+        print(f"Error: File {file_path} does not exist")
+        sys.exit(1)
+    
+    # Determine file type and load
+    SUPPORT_FTYPES = {
+        ".csv": lambda x: pd.read_csv(x),
+        ".tsv": lambda x: pd.read_csv(x, sep="\t"),
+        ".xlsx": lambda x: pd.read_excel(x),
+    }
+    
+    file_type = file_path.suffix
+    if file_type not in SUPPORT_FTYPES:
+        print(f"Error: Unsupported file format {file_type}. Supported formats: {', '.join(SUPPORT_FTYPES.keys())}")
+        sys.exit(1)
+    
+    df = SUPPORT_FTYPES[file_type](file_path)
+    
+    # Setup exchange rates
     exrs = None
     if args.standard_currency:
         print(f"Standard currency for results: {args.standard_currency}")
@@ -89,9 +119,29 @@ def main():
                 exrs.add_rate(base, quote, float(rate))
                 print(f"Registered exchange rate {base}/{quote} = {rate}")
     
+    # Validate data
+    data_format = DataFormat.from_args(args)
+    validator = DataValidator(df, data_format, exrs)
+    validation_result = validator.validate()
+    
+    if validation_result.has_errors() or validation_result.has_warnings():
+        validation_result.print_summary()
+        if validation_result.has_errors():
+            print("\nData validation failed. Please fix the errors above.")
+            sys.exit(1)
+    else:
+        print("✓ Data validation passed.")
+    
+    # If validate-only flag is set, exit after validation
+    if args.validate_only:
+        sys.exit(0)
+    
+    print("")  # Empty line for separation
+    
+    # Continue with normal processing
     loader = Loader(
         args.file,
-        DataFormat.from_args(args),
+        data_format,
         exrs
     )
 
