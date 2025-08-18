@@ -270,7 +270,7 @@ class DataValidator:
             if is_all_selector(creditor):
                 self.result.add_error(
                     row_num, self.cfg.col_creditor,
-                    f"'{creditor}' (all selector) cannot be used as creditor"
+                    f"'all' cannot be used as creditor"
                 )
             
             # Check if "all" is used when member list is empty
