@@ -1,9 +1,9 @@
 data/
 out/
 logs/
+
 *.ipynb
 .DS_Store
-src/tests/test_common.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
