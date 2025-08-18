@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "easy-split"
+version = "1.0.0"
+description = "Easily splitting bill with your friends."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    {name = "Cabin Zhu", email = "cabin_zhu@foxmail.com"}
+]
+dependencies = [
+    "numpy>=1.26.0",
+    "openpyxl>=3.0.10",
+    "pandas>=2.0.3",
+]
+
+[project.urls]
+Homepage = "https://github.com/cabinz/easy-split"
+
+[project.scripts]
+splitbill = "easysplit.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/easysplit"]
+
+[[tool.uv.index]]
+url = "https://mirrors.aliyun.com/pypi/simple/"
