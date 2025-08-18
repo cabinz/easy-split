@@ -114,9 +114,22 @@ class DataValidator:
                 missing_columns.append(col)
         
         if missing_columns:
+            # Provide helpful suggestions based on what's missing
+            suggestions = []
+            if self.cfg.col_creditor in missing_columns:
+                suggestions.append(f"creditor column (looked for: {', '.join(CREDITOR_ALIASES)})")
+            if self.cfg.col_debtor in missing_columns:
+                suggestions.append(f"debtor column (looked for: {', '.join(DEBTOR_ALIASES)})")
+            if self.cfg.col_tot_amount in missing_columns:
+                suggestions.append(f"amount column (looked for: {', '.join(AMOUNT_ALIASES)})")
+            if self.exrs and self.cfg.col_currency in missing_columns:
+                suggestions.append(f"currency column (looked for: {', '.join(CURRENCY_ALIASES)})")
+            
             self.result.add_error(
                 None, None,
-                f"Missing required columns: {', '.join(missing_columns)}"
+                f"Missing required columns: {', '.join(missing_columns)}. "
+                f"Could not auto-detect: {', '.join(suggestions)}. "
+                f"Please specify column names using CLI arguments."
             )
     
     def validate_required_fields(self):
@@ -223,12 +236,16 @@ class DataValidator:
     
     def validate_members(self):
         """Validate creditor and debtor fields."""
+        # Helper to check if value is an "all" selector
+        def is_all_selector(value: str) -> bool:
+            return value.lower().strip() in [sel.lower() for sel in ALL_SELECTOR_ALIASES]
+        
         # First pass: collect all members
         for idx, row in self.df.iterrows():
             creditor = str(row[self.cfg.col_creditor]).strip()
             debtor = str(row[self.cfg.col_debtor]).strip()
             
-            if creditor.lower() != self.cfg.all_selector:
+            if not is_all_selector(creditor):
                 # Check for multiple creditors
                 creditor_list = [c.strip() for c in creditor.split(self.cfg.separator)]
                 if len(creditor_list) > 1:
@@ -239,7 +256,7 @@ class DataValidator:
                 else:
                     self.members.add(creditor_list[0])
             
-            if debtor.lower() != self.cfg.all_selector:
+            if not is_all_selector(debtor):
                 debtor_list = [d.strip() for d in debtor.split(self.cfg.separator)]
                 self.members.update(debtor_list)
         
@@ -249,22 +266,22 @@ class DataValidator:
             creditor = str(row[self.cfg.col_creditor]).strip()
             debtor = str(row[self.cfg.col_debtor]).strip()
             
-            # Check if "all" is used as creditor
-            if creditor.lower() == self.cfg.all_selector:
+            # Check if any "all" selector is used as creditor
+            if is_all_selector(creditor):
                 self.result.add_error(
                     row_num, self.cfg.col_creditor,
-                    f"'{self.cfg.all_selector}' cannot be used as creditor"
+                    f"'{creditor}' (all selector) cannot be used as creditor"
                 )
             
             # Check if "all" is used when member list is empty
-            if debtor.lower() == self.cfg.all_selector and len(self.members) == 0:
+            if is_all_selector(debtor) and len(self.members) == 0:
                 self.result.add_error(
                     row_num, self.cfg.col_debtor,
-                    f"'{self.cfg.all_selector}' used but no members found in data"
+                    f"'{debtor}' (all selector) used but no members found in data"
                 )
             
             # Validate member names aren't empty after splitting
-            if debtor.lower() != self.cfg.all_selector:
+            if not is_all_selector(debtor):
                 debtor_list = [d.strip() for d in debtor.split(self.cfg.separator)]
                 for d in debtor_list:
                     if d == "":

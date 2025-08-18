@@ -119,8 +119,10 @@ def main():
                 exrs.add_rate(base, quote, float(rate))
                 print(f"Registered exchange rate {base}/{quote} = {rate}")
     
+    # Create DataFormat with auto-detection
+    data_format = DataFormat.from_args_with_auto_detect(args, df)
+    
     # Validate data
-    data_format = DataFormat.from_args(args)
     validator = DataValidator(df, data_format, exrs)
     validation_result = validator.validate()
     
