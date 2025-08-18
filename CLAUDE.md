@@ -32,13 +32,13 @@ uv run pytest tests/test_integration.py -v
 ### Running the CLI tool
 ```bash
 # Basic usage with auto-detection (detects Payer/Payee or Creditor/Debtor columns)
-splitbill \
+uv run splitbill \
     --file "path/to/data.xlsx" \
     --standard_currency "HKD" \
     --exchange_rate "KRW/HKD=0.0057715"
 
 # With custom column names (overrides auto-detection)
-splitbill \
+uv run splitbill \
     --file "path/to/data.xlsx" \
     --col_creditor "From" \
     --col_debtor "To" \
@@ -47,7 +47,7 @@ splitbill \
     --exchange_rate "HKD/CNY=0.9177"
 
 # Validate data without processing
-splitbill \
+uv run splitbill \
     --file "path/to/data.xlsx" \
     --standard_currency "USD" \
     --validate-only
