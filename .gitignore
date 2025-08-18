@@ -1,6 +1,7 @@
 data/
 out/
 logs/
+prompts.dev/
 
 *.ipynb
 .DS_Store
