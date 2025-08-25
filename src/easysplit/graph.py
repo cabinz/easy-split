@@ -63,7 +63,7 @@ class LendingGraph:
         return self._adj_lt[creditor]
 
     def num_edges(self) -> int:
-        return sum(len(creditor) for creditor in self._adj_lt)
+        return sum(len(self._adj_lt[creditor]) for creditor in self._adj_lt)
 
     def get_flow(self, creditor, debtor) -> float:
         return self._adj_lt[creditor][debtor] if self.has_edge(creditor, debtor) else 0.0
