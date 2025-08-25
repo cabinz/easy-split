@@ -1,53 +1,112 @@
 # Easy Split
-EasySplit (`splitbill`) is a tool for splitting bill in a group trip.
 
-During a trip, bills are often paid collectively by one person in the group and then split among all members (or some of the members) later on. These bills can accumulate and become difficult to manually track and calculate, especially the one paying (and being paid for) could be different every time. It could be even worse when multiple currency involved in the transactions. On the other hand, settling the bills immediately after each transaction can also be cumbersome.
+EasySplit (`splitbill`) is a Python-based bill splitting tool designed for group trips and shared expenses. It processes payment records from spreadsheets and generates an optimized repayment scheme with the minimum number of transactions.
 
-The EasySplit provides a command line interface `splitbill`, and supports being imported to python scripts. It takes the payment records from the a data sheet (`.xlsx`, `.csv` or `.tsv`), and **generates the simplest scheme for paying off everyone's bills with the least number of transactions**. 
+## Key Features
 
-With EasySplit, anyone in the group can contribute to paying the bill, eliminating the need to split the bill immediately as long as the payment is accurately recorded in a sheet. This feature is particularly beneficial during group trips to locations with different local currencies, as any group member can assist in paying, and the repayment can be done in the home currency.
+- **Smart Column Detection**: Automatically detects column names (Payer/Payee or Creditor/Debtor)
+- **Multi-Currency Support**: Handles multiple currencies with exchange rate conversion
+- **Transaction Optimization**: Generates the simplest repayment scheme with minimal transactions
+- **Flexible Input**: Supports Excel (.xlsx), CSV, and TSV files
+- **Data Validation**: Built-in validation with helpful error messages
+- **Beautiful Output**: Formatted tables for easy reading
+- **Export Results**: Option to export results and detailed records to CSV
+
+## Why EasySplit?
+
+During group trips or shared activities, bills are often paid by different members and split later. Manual tracking becomes complex when:
+- Different people pay at different times
+- Multiple currencies are involved
+- Bills need to be split among specific subsets of the group
+
+EasySplit solves this by:
+1. Recording all transactions in a simple spreadsheet
+2. Automatically calculating net balances
+3. Finding the optimal settlement with minimum transactions
+4. Converting all amounts to your preferred currency
 
 ## Installation
-- `Python >= 3.10`
-- All packages listed in `requirements.txt` (will be automatically installed)
 
-```
+### Requirements
+- Python >= 3.10
+- Dependencies: numpy, pandas, openpyxl (automatically installed)
+
+### Quick Install
+
+Using pip:
+```bash
 git clone https://github.com/cabinz/easy-split
-cd ./easy-split
+cd easy-split
 pip install .
 ```
 
-## Usage
-
-The recording sheet table could be like [sample files](samples/).
-![](docs/sample_input.png)
-
-Actually, the splitter only requires four columns in the red box, the rest of the content (such as date, item names) are only for the convenience of checking the records: 
-- `Creditor` (person who paid the bill)
-- `Debtor` (ppl. who owe money)
-- `Amount` (the total amount of money the creditor paid)
-- `Currency` (the transaction currency)
-
-In command line, run the EasySplit with
-```shell
-splitbill \
-    --file "samples/sample_data.xlsx" \  
-    --standard_currency "HKD" \
-    --exchange_rate "KRW/HKD=0.0057715"
-# args: 
-# --file: data sheet
-# --standard_currency: result currency
-# --exchange_rate: used to convert KRW to standard currency (support specifying multiple exchange rates)
+Using uv (recommended for development):
+```bash
+git clone https://github.com/cabinz/easy-split
+cd easy-split
+uv pip install -e .
 ```
 
-The results will be like:
-```shell
-...
+Using make:
+```bash
+git clone https://github.com/cabinz/easy-split
+cd easy-split
+make install         # For users
+make install-dev     # For developers (sets up venv)
+```
+
+## Quick Start
+
+### 1. Prepare Your Data
+
+Create a spreadsheet with transaction records. See [sample files](samples/) for examples.
+
+![](docs/sample_input.png)
+
+Required columns (auto-detected):
+- **Creditor/Payer**: Person who paid the bill
+- **Debtor/Payee**: People who owe money (use "all" or "*" for everyone)
+- **Amount/Total**: Total amount paid
+- **Currency**: Transaction currency (optional if single currency)
+
+### 2. Run the Command
+
+Basic usage with auto-detection:
+```bash
+splitbill \
+    --file "samples/sample_data.xlsx" \
+    --standard_currency "HKD" \
+    --exchange_rate "KRW/HKD=0.0057715"
+```
+
+With custom column names:
+```bash
+splitbill \
+    --file "data.csv" \
+    --col_creditor "From" \
+    --col_debtor "To" \
+    --col_tot_amount "Value" \
+    --standard_currency "USD" \
+    --exchange_rate "EUR/USD=1.08"
+```
+
+Validate data without processing:
+```bash
+splitbill \
+    --file "data.xlsx" \
+    --standard_currency "USD" \
+    --validate-only
+```
+
+### 3. View Results
+
+The output shows the optimized repayment scheme:
+```
 Members: Vivian, Alan, Cathy, Cabin
 ====================
 Creditors:
         Alan: HKD1067.90
-Debtors
+Debtors:
         Vivian: HKD411.34
         Cathy: HKD652.40
         Cabin: HKD4.16
@@ -60,34 +119,126 @@ Simplest bill splitting scheme: (with 3 transactions)
 ║ 2  ║   Alan   ║ <-- ║ Cathy  ║        652.40║
 ║ 3  ║   Alan   ║ <-- ║ Cabin  ║          4.16║
 ╚════╩══════════╩═════╩════════╩══════════════╝
-...
 ```
 
---- 
+## Advanced Usage
 
-There are more parameters support customization in the command-line arguments:
-```shell
-options:
-  -h, --help            show this help message and exit
-  --file FILE           Path to the data file.
-  --col_creditor COL_CREDITOR
-                        Column name for creditors in the sheet. Default as "Creditor".
-  --col_debtor COL_DEBTOR
-                        Column name for debtors in the sheet. Default as "Debtor".
-  --col_tot_amount COL_TOT_AMOUNT
-                        Column name for total lending amount (from the creditor) in the sheet. Default as 'Amount'
-  --col_currency COL_CURRENCY
-                        Column name for transation currency. Default as 'Currency'
-  --separator SEPARATOR
-                        Separator for splitting names in a cell. Default as comma ','.
-  --all_selector ALL_SELECTOR
-                        String specifying all members memtioned in the data. Default as 'all'.
-  --standard_currency STANDARD_CURRENCY
-                        The currency for settlement (ie., to be displayed in results). eg., "HKD".
-  --exchange_rate EXCHANGE_RATE
-                        Exchange rate. BASE/QUOTE=x means 1 BASE is converted to x QUOTE. eg., USD/HKD=7.8
-  --result_dump_path RESULT_DUMP_PATH
-                        File path to dump the output sheet. eg. "path/to/out.csv".
-  --details_dump_path DETAILS_DUMP_PATH
-                        File path to dump the detailed preprocessed record sheet. eg. "path/to/details.csv".
+### Command-Line Options
+
+```bash
+splitbill [OPTIONS]
+
+Required:
+  --file FILE                   Path to the data file (.xlsx, .csv, .tsv)
+  --standard_currency CURRENCY  Currency for settlement (e.g., "USD", "EUR")
+
+Optional:
+  --exchange_rate RATE          Exchange rate: BASE/QUOTE=x (e.g., "EUR/USD=1.08")
+                                Can specify multiple rates
+  
+Column Names (auto-detected if not specified):
+  --col_creditor NAME           Column for payer (default: auto-detect)
+  --col_debtor NAME             Column for payee (default: auto-detect)  
+  --col_tot_amount NAME         Column for amount (default: auto-detect)
+  --col_currency NAME           Column for currency (default: auto-detect)
+  
+Data Processing:
+  --separator SEP               Separator for multiple names (default: ",")
+  --all_selector SELECTOR       String for "all members" (default: "all")
+  --validate-only              Only validate data without processing
+  
+Output:
+  --result_dump_path PATH       Export results to CSV file
+  --details_dump_path PATH      Export detailed records to CSV file
 ```
+
+### Examples
+
+**Multiple exchange rates:**
+```bash
+splitbill \
+    --file "trip_expenses.xlsx" \
+    --standard_currency "USD" \
+    --exchange_rate "EUR/USD=1.08" \
+    --exchange_rate "GBP/USD=1.27" \
+    --exchange_rate "JPY/USD=0.0067"
+```
+
+**Export results:**
+```bash
+splitbill \
+    --file "expenses.csv" \
+    --standard_currency "EUR" \
+    --result_dump_path "settlement.csv" \
+    --details_dump_path "all_transactions.csv"
+```
+
+**Custom separators and selectors:**
+```bash
+splitbill \
+    --file "data.xlsx" \
+    --standard_currency "USD" \
+    --separator ";" \
+    --all_selector "everyone"
+```
+
+## Data Format
+
+### Input Spreadsheet Structure
+
+Your spreadsheet should contain these columns (names are flexible and auto-detected):
+
+| Date | Item | Payer | Payee | Amount | Currency |
+|------|------|-------|-------|--------|----------|
+| 2024-01-15 | Lunch | Alice | all | 120.50 | USD |
+| 2024-01-15 | Taxi | Bob | Alice, Charlie | 45.00 | USD |
+| 2024-01-16 | Hotel | Charlie | * | 580.00 | EUR |
+
+**Column Details:**
+- **Payer/Creditor**: Who paid for the expense
+- **Payee/Debtor**: Who should pay (comma-separated names or "all"/"*")
+- **Amount**: Total amount paid
+- **Currency**: Optional if using single currency
+- **Other columns**: Kept for reference but not processed
+
+### Supported Column Aliases
+
+The tool automatically detects these column name variations:
+- Creditor: "Creditor", "Payer", "From", "Paid By"
+- Debtor: "Debtor", "Payee", "To", "Split With"
+- Amount: "Amount", "Total", "Value", "Cost"
+- Currency: "Currency", "Curr", "CCY"
+
+## Development
+
+### Running Tests
+```bash
+# All tests
+uv run pytest
+
+# Specific test
+uv run pytest tests/test_auto_detect.py -v
+
+# With coverage
+uv run pytest --cov=easysplit
+```
+
+### Project Structure
+```
+easy-split/
+├── src/easysplit/
+│   ├── __main__.py       # CLI entry point
+│   ├── loader.py         # Data loading and preprocessing
+│   ├── graph.py          # Graph algorithms for optimization
+│   ├── exr.py            # Exchange rate handling
+│   ├── validator.py      # Data validation
+│   ├── formatter.py      # Output formatting
+│   └── config.py         # Configuration and defaults
+├── tests/                # Unit and integration tests
+├── samples/              # Sample data files
+└── Makefile             # Build automation
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit pull requests or open issues.
