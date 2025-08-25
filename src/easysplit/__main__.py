@@ -3,6 +3,7 @@
 from .config import *
 from .loader import Loader, DataFormat
 from .exr import ExchangeRates
+from .formatter import format_transaction_table
 from .validator import DataValidator, ValidationResult
 from . import graph
 
@@ -185,9 +186,16 @@ def main():
                     else "Amount")
     dumped_df = equiv.dump(col_amount=coln_amount)
 
-    print("Simplest bill splitting scheme:")
-    print(dumped_df)
-    print(SPLIT_LN)
+    # Display transaction count in the title
+    transaction_count = len(dumped_df)
+    print(f"Simplest bill splitting scheme: (with {transaction_count} transaction{'s' if transaction_count != 1 else ''})")
+    
+    # Format and display the table
+    if not dumped_df.empty:
+        formatted_table = format_transaction_table(dumped_df, args.standard_currency)
+        print(formatted_table)
+    else:
+        print("No transactions needed - everyone is settled!")
 
     if args.result_dump_path is not None:
         dumped_df.to_csv(args.result_dump_path)
