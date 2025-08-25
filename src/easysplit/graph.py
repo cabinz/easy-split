@@ -104,10 +104,13 @@ class LendingGraph:
 
 
 def check_equiv(g1: LendingGraph, g2: LendingGraph) -> bool:
-    if set(g1.get_nodes()) != set(g2.get_nodes()):
-        return False
-    for node in g1.get_nodes():
-        if not is_equal(g1.net_out_flow[node], g2.net_out_flow[node]):
+    # Get all nodes that have non-zero net flow in either graph
+    all_nodes = set(g1.net_out_flow.keys()) | set(g2.net_out_flow.keys())
+    
+    for node in all_nodes:
+        flow1 = g1.net_out_flow.get(node, 0.0)
+        flow2 = g2.net_out_flow.get(node, 0.0)
+        if not is_equal(flow1, flow2):
             return False
     return True
 
