@@ -43,20 +43,23 @@ splitbill \
 The results will be like:
 ```shell
 ...
-Members: Cathy, Alan, Vivian, Cabin
+Members: Vivian, Alan, Cathy, Cabin
 ====================
 Creditors:
         Alan: HKD1067.90
 Debtors
-        Cathy: HKD652.40
         Vivian: HKD411.34
+        Cathy: HKD652.40
         Cabin: HKD4.16
 ====================
-Simplest bill splitting scheme:
-  Creditor  Debtor  Amount (HKD)
-0     Alan   Cathy        652.40
-1     Alan  Vivian        411.34
-2     Alan   Cabin          4.16
+Simplest bill splitting scheme: (with 3 transactions)
+╔════╦══════════╦═════╦════════╦══════════════╗
+║ #  ║ Creditor ║     ║ Debtor ║ Amount (HKD) ║
+╠════╬══════════╬═════╬════════╬══════════════╣
+║ 1  ║   Alan   ║ <-- ║ Vivian ║        411.34║
+║ 2  ║   Alan   ║ <-- ║ Cathy  ║        652.40║
+║ 3  ║   Alan   ║ <-- ║ Cabin  ║          4.16║
+╚════╩══════════╩═════╩════════╩══════════════╝
 ...
 ```
 
