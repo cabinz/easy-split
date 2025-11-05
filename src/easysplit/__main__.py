@@ -1,7 +1,7 @@
 """CLI entry of the package."""
 
 from .config import *
-from .loader import Loader, DataFormat
+from .loader import Loader, DataFormat, clean_amount_column
 from .exr import ExchangeRates
 from .formatter import format_transaction_table
 from .validator import DataValidator, ValidationResult
@@ -122,7 +122,11 @@ def main():
     
     # Create DataFormat with auto-detection
     data_format = DataFormat.from_args_with_auto_detect(args, df)
-    
+
+    # Clean amount column to handle comma-formatted numbers
+    # This must be done before validation
+    clean_amount_column(df, data_format.col_tot_amount)
+
     # Validate data
     validator = DataValidator(df, data_format, exrs)
     validation_result = validator.validate()

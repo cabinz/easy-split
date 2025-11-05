@@ -10,6 +10,38 @@ import pandas as pd
 from pathlib import Path
 
 
+def clean_amount_column(df: pd.DataFrame, amount_col: str) -> None:
+    """Clean amount column by removing thousand separators (commas) in-place.
+
+    This function handles amount values that may contain comma thousand separators
+    (e.g., "2,900.00") and converts them to proper numeric values.
+
+    Args:
+        df: DataFrame to clean
+        amount_col: Name of the amount column to clean
+
+    Raises:
+        ValueError: If invalid amount values are detected after cleaning
+    """
+    # Check if column contains string/object values
+    if df[amount_col].dtype == 'object':
+        # Remove commas from string amounts (English format: 1,234.56)
+        df[amount_col] = df[amount_col].astype(str).str.replace(',', '', regex=False)
+
+    # Convert to numeric (float), coerce errors to NaN
+    df[amount_col] = pd.to_numeric(df[amount_col], errors='coerce')
+
+    # Check for NaN values after conversion (indicates invalid data)
+    if df[amount_col].isna().any():
+        invalid_rows = df[df[amount_col].isna()].index.tolist()
+        # Get the actual row numbers (1-indexed for user readability)
+        invalid_row_numbers = [r + 2 for r in invalid_rows]  # +2 for header and 0-indexing
+        raise ValueError(
+            f"Invalid amount values found in row(s): {invalid_row_numbers}. "
+            f"Please check the '{amount_col}' column for non-numeric values."
+        )
+
+
 class DataFormat:
     def __init__(self,
                  col_creditor=DEFAULT_COL_CREDITOR,
@@ -151,8 +183,10 @@ class Loader:
         self._file_path = file_path
         self._df = SUPPORT_FTYPES[self._file_path.suffix](self._file_path)
         self._cfg = cfg
-        
-        
+
+        # Clean amount column to handle comma-formatted numbers
+        self._clean_amount_column()
+
         self._metacoln_std_tot_amount = f"Total Amount"
         if exrs is not None:
             self._metacoln_std_tot_amount += f" ({exrs.std_currency})"
@@ -201,6 +235,13 @@ class Loader:
                 debtors.remove(creditor)
             for debtor in debtors:
                 self._g.add_edge(creditor, debtor, pp_amount)
+
+    def _clean_amount_column(self):
+        """Clean amount column by removing thousand separators (commas).
+
+        This is a wrapper around the standalone clean_amount_column function.
+        """
+        clean_amount_column(self._df, self._cfg.col_tot_amount)
 
     def get_graph(self):
         return self._g
