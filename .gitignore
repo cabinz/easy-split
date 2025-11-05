@@ -1,7 +1,8 @@
 data/
 out/
 logs/
-prompts.dev/
+prompts/
+.claude/
 
 *.ipynb
 .DS_Store
