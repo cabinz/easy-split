@@ -97,15 +97,15 @@ class TestAutoDetection:
     def test_no_match_returns_none(self):
         """Test that None is returned when no matching column is found."""
         df = pd.DataFrame({
-            "From": ["Alice"],
-            "To": ["Bob"],
-            "Value": [100],
-            "Curr": ["USD"]
+            "Sender": ["Alice"],      # Not in CREDITOR_ALIASES
+            "Receiver": ["Bob"],      # Not in DEBTOR_ALIASES
+            "Price": [100],           # Not in AMOUNT_ALIASES
+            "Money": ["USD"]          # Not in CURRENCY_ALIASES
         })
-        
+
         detected = DataFormat.auto_detect_column(df.columns.tolist(), CREDITOR_ALIASES)
         assert detected is None
-        
+
         detected = DataFormat.auto_detect_column(df.columns.tolist(), DEBTOR_ALIASES)
         assert detected is None
     
