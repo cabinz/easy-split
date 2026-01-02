@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-EasySplit is a Python-based bill splitting tool designed for group trips. It processes payment records from data sheets (.xlsx, .csv, .tsv) and generates an optimized repayment scheme with the minimum number of transactions. The tool supports multiple currencies with exchange rate conversion.
+SplitBill is a Python-based bill splitting tool designed for group trips. It processes payment records from data sheets (.xlsx, .csv, .tsv) and generates an optimized repayment scheme with the minimum number of transactions. The tool supports multiple currencies with exchange rate conversion.
 
 ## Key Commands
 
@@ -59,7 +59,7 @@ uv run splitbill \
 uv pip install -e .
 
 # Run the module directly with uv
-uv run python -m easysplit --file "samples/sample_data.csv" --standard_currency "HKD"
+uv run python -m splitbill --file "samples/sample_data.csv" --standard_currency "HKD"
 
 # Run sample script
 uv run bash samples/run.sh
@@ -69,12 +69,12 @@ uv run bash samples/run.sh
 
 ### Core Components
 
-1. **CLI Entry Point** (`src/easysplit/__main__.py`)
+1. **CLI Entry Point** (`src/splitbill/__main__.py`)
    - Parses command-line arguments
    - Coordinates data loading, graph processing, and result output
    - Handles exchange rate registration
 
-2. **Data Loading** (`src/easysplit/loader.py`)
+2. **Data Loading** (`src/splitbill/loader.py`)
    - `Loader` class: Loads and preprocesses transaction data from spreadsheets
    - `DataFormat` class: Encapsulates column naming and data format configuration
      - Auto-detects column names (Payer/Payee or Creditor/Debtor)
@@ -83,24 +83,24 @@ uv run bash samples/run.sh
    - Supports CSV, TSV, and Excel formats
    - Handles member extraction and transaction normalization
 
-3. **Graph Processing** (`src/easysplit/graph.py`)
+3. **Graph Processing** (`src/splitbill/graph.py`)
    - `LendingGraph` class: Represents lending relationships as a directed weighted graph
    - Implements graph simplification algorithm to minimize transactions
    - Tracks net cash flows for each participant
    - `simplest_equiv()` function: Core algorithm for finding optimal repayment scheme
 
-4. **Exchange Rates** (`src/easysplit/exr.py`)
+4. **Exchange Rates** (`src/splitbill/exr.py`)
    - `ExchangeRates` class: Manages currency conversion
    - Supports multiple exchange rate pairs
    - Converts all amounts to a standard currency for settlement
 
-5. **Configuration** (`src/easysplit/config.py`)
+5. **Configuration** (`src/splitbill/config.py`)
    - Column name aliases for auto-detection
    - All selector aliases ("all", "*", "ALL", "All")
    - Default column names and separators
    - Configurable via CLI arguments
 
-6. **Data Validation** (`src/easysplit/validator.py`)
+6. **Data Validation** (`src/splitbill/validator.py`)
    - Validates data structure and required columns
    - Checks for missing or invalid values
    - Validates currency exchange rates

@@ -1,6 +1,6 @@
-# Easy Split
+# Split Bill
 
-EasySplit (`splitbill`) is a Python-based bill splitting tool designed for group trips and shared expenses. It processes payment records from spreadsheets and generates an optimized repayment scheme with the minimum number of transactions.
+SplitBill is a Python-based bill splitting tool designed for group trips and shared expenses. It processes payment records from spreadsheets and generates an optimized repayment scheme with the minimum number of transactions.
 
 ## Key Features
 
@@ -12,14 +12,14 @@ EasySplit (`splitbill`) is a Python-based bill splitting tool designed for group
 - **Beautiful Output**: Formatted tables for easy reading
 - **Export Results**: Option to export results and detailed records to CSV
 
-## Why EasySplit?
+## Why SplitBill?
 
 During group trips or shared activities, bills are often paid by different members and split later. Manual tracking becomes complex when:
 - Different people pay at different times
 - Multiple currencies are involved
 - Bills need to be split among specific subsets of the group
 
-EasySplit solves this by:
+SplitBill solves this by:
 1. Recording all transactions in a simple spreadsheet
 2. Automatically calculating net balances
 3. Finding the optimal settlement with minimum transactions
@@ -35,22 +35,22 @@ EasySplit solves this by:
 
 Using pip:
 ```bash
-git clone https://github.com/cabinz/easy-split
-cd easy-split
+git clone https://github.com/cabinz/split-bill
+cd split-bill
 pip install .
 ```
 
 Using uv (recommended for development):
 ```bash
-git clone https://github.com/cabinz/easy-split
-cd easy-split
+git clone https://github.com/cabinz/split-bill
+cd split-bill
 uv pip install -e .
 ```
 
 Using make:
 ```bash
-git clone https://github.com/cabinz/easy-split
-cd easy-split
+git clone https://github.com/cabinz/split-bill
+cd split-bill
 make install         # For users
 make install-dev     # For developers (sets up venv)
 ```
@@ -220,13 +220,13 @@ uv run pytest
 uv run pytest tests/test_auto_detect.py -v
 
 # With coverage
-uv run pytest --cov=easysplit
+uv run pytest --cov=splitbill
 ```
 
 ### Project Structure
 ```
-easy-split/
-├── src/easysplit/
+split-bill/
+├── src/splitbill/
 │   ├── __main__.py       # CLI entry point
 │   ├── loader.py         # Data loading and preprocessing
 │   ├── graph.py          # Graph algorithms for optimization
