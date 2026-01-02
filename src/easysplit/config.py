@@ -1,5 +1,16 @@
 """Default configuration values for data format of records and the framework."""
 
+from enum import Enum, auto
+
+
+class DataColumn(Enum):
+    """Enum representing the required data columns."""
+    CREDITOR = auto()
+    DEBTOR = auto()
+    AMOUNT = auto()
+    CURRENCY = auto()
+
+
 DEFAULT_SEP = ","
 
 # Column name aliases for auto-detection (in priority order)
@@ -26,6 +37,14 @@ CURRENCY_ALIASES = [
     "货币", "币种",
 ]
 DEFAULT_COL_CURRENCY = CURRENCY_ALIASES[0]
+
+# Mapping from DataColumn to aliases
+COLUMN_ALIASES = {
+    DataColumn.CREDITOR: CREDITOR_ALIASES,
+    DataColumn.DEBTOR: DEBTOR_ALIASES,
+    DataColumn.AMOUNT: AMOUNT_ALIASES,
+    DataColumn.CURRENCY: CURRENCY_ALIASES,
+}
 
 # All selector aliases (for indicating all members)
 ALL_SELECTOR_ALIASES = [

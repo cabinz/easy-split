@@ -6,6 +6,7 @@ from io import StringIO
 
 from easysplit.validator import DataValidator, ValidationResult, ValidationError, Severity
 from easysplit.loader import DataFormat
+from easysplit.config import DataColumn
 from easysplit.exr import ExchangeRates
 
 
@@ -104,7 +105,7 @@ Emily,Frank,300,USD"""
             col_debtor="Payee",  # Wrong column name
             col_tot_amount="Amount",
             col_currency="Currency",
-            user_specified_columns={'debtor'}
+            user_specified_columns={DataColumn.DEBTOR}
         )
         validator = DataValidator(df, data_format)
         result = validator.validate()

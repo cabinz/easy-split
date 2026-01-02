@@ -50,7 +50,7 @@ class DataFormat:
                  col_currency=DEFAULT_COL_CURRENCY,
                  separator=DEFAULT_SEP,  # separator for multiple names
                  all_selector=DEFAULT_ALL_SELECTOR,
-                 user_specified_columns: Optional[set] = None,
+                 user_specified_columns: Optional[set[DataColumn]] = None,
                  ) -> None:
         self.col_creditor = col_creditor
         self.col_debtor = col_debtor
@@ -59,7 +59,7 @@ class DataFormat:
         self.separator = separator
         self.all_selector = all_selector
         # Track which columns were explicitly specified by user (not auto-detected)
-        self.user_specified_columns = user_specified_columns or set()
+        self.user_specified_columns: set[DataColumn] = user_specified_columns or set()
 
     @classmethod
     def from_args(cls, args):
@@ -106,7 +106,7 @@ class DataFormat:
             DataFormat instance with detected or specified column names
         """
         # Track which columns are explicitly specified by user
-        user_specified_cols = set()
+        user_specified_cols: set[DataColumn] = set()
 
         # Creditor column: user specified > auto-detect > default
         col_creditor = args.col_creditor
@@ -119,7 +119,7 @@ class DataFormat:
                 # Keep the default, will fail later if column doesn't exist
                 col_creditor = DEFAULT_COL_CREDITOR
         else:
-            user_specified_cols.add('creditor')
+            user_specified_cols.add(DataColumn.CREDITOR)
 
         # Debtor column: user specified > auto-detect > default
         col_debtor = args.col_debtor
@@ -131,7 +131,7 @@ class DataFormat:
             else:
                 col_debtor = DEFAULT_COL_DEBTOR
         else:
-            user_specified_cols.add('debtor')
+            user_specified_cols.add(DataColumn.DEBTOR)
 
         # Amount column: user specified > auto-detect > default
         col_tot_amount = args.col_tot_amount
@@ -143,7 +143,7 @@ class DataFormat:
             else:
                 col_tot_amount = DEFAULT_COL_TOT_AMOUNT
         else:
-            user_specified_cols.add('amount')
+            user_specified_cols.add(DataColumn.AMOUNT)
 
         # Currency column: user specified > auto-detect > default
         col_currency = args.col_currency
@@ -155,7 +155,7 @@ class DataFormat:
             else:
                 col_currency = DEFAULT_COL_CURRENCY
         else:
-            user_specified_cols.add('currency')
+            user_specified_cols.add(DataColumn.CURRENCY)
 
         return cls(
             col_creditor=col_creditor,

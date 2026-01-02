@@ -6,7 +6,10 @@ import tempfile
 import os
 from pathlib import Path
 from easysplit.loader import DataFormat
-from easysplit.config import CREDITOR_ALIASES, DEBTOR_ALIASES, AMOUNT_ALIASES, CURRENCY_ALIASES
+from easysplit.config import (
+    CREDITOR_ALIASES, DEBTOR_ALIASES, AMOUNT_ALIASES, CURRENCY_ALIASES,
+    DataColumn
+)
 
 
 class TestAutoDetection:
@@ -200,4 +203,6 @@ class TestAutoDetection:
         assert data_format.col_tot_amount == "Value"
         assert data_format.col_currency == "Curr"
         # All should be marked as user-specified
-        assert data_format.user_specified_columns == {'creditor', 'debtor', 'amount', 'currency'}
+        assert data_format.user_specified_columns == {
+            DataColumn.CREDITOR, DataColumn.DEBTOR, DataColumn.AMOUNT, DataColumn.CURRENCY
+        }

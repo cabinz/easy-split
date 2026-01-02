@@ -102,6 +102,14 @@ class DataValidator:
     
     def validate_structure(self):
         """Check if required columns exist."""
+        # Map column names to their DataColumn type
+        col_to_type = {
+            self.cfg.col_creditor: DataColumn.CREDITOR,
+            self.cfg.col_debtor: DataColumn.DEBTOR,
+            self.cfg.col_tot_amount: DataColumn.AMOUNT,
+            self.cfg.col_currency: DataColumn.CURRENCY,
+        }
+
         required_columns = [
             self.cfg.col_creditor,
             self.cfg.col_debtor,
@@ -121,18 +129,12 @@ class DataValidator:
             user_specified_missing = []
             auto_detect_missing = []
 
-            col_type_map = {
-                self.cfg.col_creditor: ('creditor', CREDITOR_ALIASES),
-                self.cfg.col_debtor: ('debtor', DEBTOR_ALIASES),
-                self.cfg.col_tot_amount: ('amount', AMOUNT_ALIASES),
-                self.cfg.col_currency: ('currency', CURRENCY_ALIASES),
-            }
-
             for col in missing_columns:
-                col_type, aliases = col_type_map.get(col, (None, []))
+                col_type = col_to_type.get(col)
                 if col_type and col_type in self.cfg.user_specified_columns:
                     user_specified_missing.append(col)
                 else:
+                    aliases = COLUMN_ALIASES.get(col_type, [])
                     auto_detect_missing.append((col, col_type, aliases))
 
             # Build error message
@@ -151,7 +153,7 @@ class DataValidator:
                 suggestions = []
                 for col, col_type, aliases in auto_detect_missing:
                     if col_type:
-                        suggestions.append(f"{col_type} column (looked for: {', '.join(aliases)})")
+                        suggestions.append(f"{col_type.name.lower()} column (looked for: {', '.join(aliases)})")
                     else:
                         suggestions.append(col)
 
