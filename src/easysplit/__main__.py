@@ -27,23 +27,23 @@ def main():
     )
     parser.add_argument(
         "--col_creditor",
-        default=DEFAULT_COL_CREDITOR,
-        help=f'Column name for creditors in the sheet. Default as "{DEFAULT_COL_CREDITOR}".',
+        default=None,
+        help=f'Column name for creditors in the sheet. Auto-detected if not specified.',
     )
     parser.add_argument(
         "--col_debtor",
-        default=DEFAULT_COL_DEBTOR,
-        help=f'Column name for debtors in the sheet. Default as "{DEFAULT_COL_DEBTOR}".',
+        default=None,
+        help=f'Column name for debtors in the sheet. Auto-detected if not specified.',
     )
     parser.add_argument(
         "--col_tot_amount",
-        default=DEFAULT_COL_TOT_AMOUNT,
-        help=f"Column name for total lending amount (from the creditor) in the sheet. Default as '{DEFAULT_COL_TOT_AMOUNT}'",
+        default=None,
+        help=f"Column name for total lending amount (from the creditor) in the sheet. Auto-detected if not specified.",
     )
     parser.add_argument(
         "--col_currency",
-        default=DEFAULT_COL_CURRENCY,
-        help=f"Column name for transation currency. Default as '{DEFAULT_COL_CURRENCY}'",
+        default=None,
+        help=f"Column name for transation currency. Auto-detected if not specified.",
     )
 
     parser.add_argument(

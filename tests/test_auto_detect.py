@@ -135,17 +135,17 @@ class TestAutoDetection:
     def test_from_args_with_auto_detect(self):
         """Test the from_args_with_auto_detect method."""
         from argparse import Namespace
-        
-        # Create mock args
+
+        # Create mock args with None values (not user-specified)
         args = Namespace(
-            col_creditor="Creditor",  # Default value (not user-specified)
-            col_debtor="Debtor",      # Default value (not user-specified)
-            col_tot_amount="Amount",  # Default value
-            col_currency="Currency",  # Default value
+            col_creditor=None,      # Not specified, should auto-detect
+            col_debtor=None,        # Not specified, should auto-detect
+            col_tot_amount=None,    # Not specified, should auto-detect
+            col_currency=None,      # Not specified, should auto-detect
             separator=",",
             all_selector="all"
         )
-        
+
         # Create DataFrame with Payer/Payee columns
         df = pd.DataFrame({
             "Payer": ["Alice"],
@@ -153,20 +153,22 @@ class TestAutoDetection:
             "Amount": [100],
             "Currency": ["USD"]
         })
-        
+
         # Test auto-detection
         data_format = DataFormat.from_args_with_auto_detect(args, df)
-        
+
         # Should detect Payer and Payee
         assert data_format.col_creditor == "Payer"
         assert data_format.col_debtor == "Payee"
         assert data_format.col_tot_amount == "Amount"
         assert data_format.col_currency == "Currency"
+        # None of these should be marked as user-specified
+        assert len(data_format.user_specified_columns) == 0
     
     def test_user_override_takes_precedence(self):
         """Test that user-specified columns override auto-detection."""
         from argparse import Namespace
-        
+
         # Create mock args with user-specified values
         args = Namespace(
             col_creditor="From",      # User-specified
@@ -176,7 +178,7 @@ class TestAutoDetection:
             separator=",",
             all_selector="all"
         )
-        
+
         # Create DataFrame with Payer/Payee columns (which would normally be detected)
         df = pd.DataFrame({
             "Payer": ["Alice"],
@@ -188,12 +190,14 @@ class TestAutoDetection:
             "Currency": ["USD"],
             "Curr": ["EUR"]
         })
-        
+
         # Test that user-specified values take precedence
         data_format = DataFormat.from_args_with_auto_detect(args, df)
-        
+
         # Should use user-specified columns, not auto-detected ones
         assert data_format.col_creditor == "From"
         assert data_format.col_debtor == "To"
         assert data_format.col_tot_amount == "Value"
         assert data_format.col_currency == "Curr"
+        # All should be marked as user-specified
+        assert data_format.user_specified_columns == {'creditor', 'debtor', 'amount', 'currency'}

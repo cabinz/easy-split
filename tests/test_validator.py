@@ -85,10 +85,37 @@ Emily,Frank,300,USD"""
         df = pd.DataFrame({"Creditor": ["Alice"], "Amount": [100]})
         validator = DataValidator(df, data_format)
         result = validator.validate()
-        
+
         assert result.has_errors()
-        assert any("Missing required columns" in str(e) for e in result.errors)
-    
+        assert any("Could not auto-detect" in str(e) for e in result.errors)
+
+    def test_validate_user_specified_wrong_column(self):
+        """Test error message when user specifies wrong column name."""
+        # Data has "参与人" column, but user specifies "Payee"
+        df = pd.DataFrame({
+            "Creditor": ["Alice"],
+            "参与人": ["Bob"],
+            "Amount": [100],
+            "Currency": ["USD"]
+        })
+        # Create DataFormat with user_specified_columns indicating debtor was user-specified
+        data_format = DataFormat(
+            col_creditor="Creditor",
+            col_debtor="Payee",  # Wrong column name
+            col_tot_amount="Amount",
+            col_currency="Currency",
+            user_specified_columns={'debtor'}
+        )
+        validator = DataValidator(df, data_format)
+        result = validator.validate()
+
+        assert result.has_errors()
+        # Should report "Specified column(s) not found" instead of "Could not auto-detect"
+        error_msg = str(result.errors[0])
+        assert "Specified column(s) not found" in error_msg
+        assert "'Payee'" in error_msg
+        assert "Available columns" in error_msg
+
     def test_validate_empty_creditor(self, data_format):
         """Test validation with empty creditor."""
         data = """Creditor,Debtor,Amount,Currency

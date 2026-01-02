@@ -1,13 +1,16 @@
 """Data validation module for EasySplit."""
 
+from __future__ import annotations
 from dataclasses import dataclass
-from typing import List, Optional, Set
+from typing import List, Optional, Set, TYPE_CHECKING
 from enum import Enum
 import pandas as pd
-from pathlib import Path
 
 from .config import *
 from .exr import ExchangeRates
+
+if TYPE_CHECKING:
+    from .loader import DataFormat
 
 
 class Severity(Enum):
@@ -101,36 +104,63 @@ class DataValidator:
         """Check if required columns exist."""
         required_columns = [
             self.cfg.col_creditor,
-            self.cfg.col_debtor, 
+            self.cfg.col_debtor,
             self.cfg.col_tot_amount
         ]
-        
+
         if self.exrs:
             required_columns.append(self.cfg.col_currency)
-        
+
         missing_columns = []
         for col in required_columns:
             if col not in self.df.columns:
                 missing_columns.append(col)
-        
+
         if missing_columns:
-            # Provide helpful suggestions based on what's missing
-            suggestions = []
-            if self.cfg.col_creditor in missing_columns:
-                suggestions.append(f"creditor column (looked for: {', '.join(CREDITOR_ALIASES)})")
-            if self.cfg.col_debtor in missing_columns:
-                suggestions.append(f"debtor column (looked for: {', '.join(DEBTOR_ALIASES)})")
-            if self.cfg.col_tot_amount in missing_columns:
-                suggestions.append(f"amount column (looked for: {', '.join(AMOUNT_ALIASES)})")
-            if self.exrs and self.cfg.col_currency in missing_columns:
-                suggestions.append(f"currency column (looked for: {', '.join(CURRENCY_ALIASES)})")
-            
-            self.result.add_error(
-                None, None,
-                f"Missing required columns: {', '.join(missing_columns)}. "
-                f"Could not auto-detect: {', '.join(suggestions)}. "
-                f"Please specify column names using CLI arguments."
-            )
+            # Separate user-specified columns from auto-detected ones
+            user_specified_missing = []
+            auto_detect_missing = []
+
+            col_type_map = {
+                self.cfg.col_creditor: ('creditor', CREDITOR_ALIASES),
+                self.cfg.col_debtor: ('debtor', DEBTOR_ALIASES),
+                self.cfg.col_tot_amount: ('amount', AMOUNT_ALIASES),
+                self.cfg.col_currency: ('currency', CURRENCY_ALIASES),
+            }
+
+            for col in missing_columns:
+                col_type, aliases = col_type_map.get(col, (None, []))
+                if col_type and col_type in self.cfg.user_specified_columns:
+                    user_specified_missing.append(col)
+                else:
+                    auto_detect_missing.append((col, col_type, aliases))
+
+            # Build error message
+            error_parts = []
+
+            # Report user-specified columns that don't exist
+            if user_specified_missing:
+                available_cols = list(self.df.columns)
+                error_parts.append(
+                    f"Specified column(s) not found in data: {', '.join(repr(c) for c in user_specified_missing)}. "
+                    f"Available columns: {', '.join(repr(c) for c in available_cols)}"
+                )
+
+            # Report auto-detection failures
+            if auto_detect_missing:
+                suggestions = []
+                for col, col_type, aliases in auto_detect_missing:
+                    if col_type:
+                        suggestions.append(f"{col_type} column (looked for: {', '.join(aliases)})")
+                    else:
+                        suggestions.append(col)
+
+                error_parts.append(
+                    f"Could not auto-detect: {', '.join(suggestions)}. "
+                    f"Please specify column names using CLI arguments."
+                )
+
+            self.result.add_error(None, None, " ".join(error_parts))
     
     def validate_required_fields(self):
         """Check for empty or missing values in required fields."""

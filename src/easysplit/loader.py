@@ -50,6 +50,7 @@ class DataFormat:
                  col_currency=DEFAULT_COL_CURRENCY,
                  separator=DEFAULT_SEP,  # separator for multiple names
                  all_selector=DEFAULT_ALL_SELECTOR,
+                 user_specified_columns: Optional[set] = None,
                  ) -> None:
         self.col_creditor = col_creditor
         self.col_debtor = col_debtor
@@ -57,6 +58,8 @@ class DataFormat:
         self.col_currency = col_currency
         self.separator = separator
         self.all_selector = all_selector
+        # Track which columns were explicitly specified by user (not auto-detected)
+        self.user_specified_columns = user_specified_columns or set()
 
     @classmethod
     def from_args(cls, args):
@@ -94,17 +97,20 @@ class DataFormat:
     @classmethod
     def from_args_with_auto_detect(cls, args, df: pd.DataFrame):
         """Create DataFormat with auto-detection support.
-        
+
         Args:
             args: Command line arguments
             df: DataFrame to detect columns from
-        
+
         Returns:
             DataFormat instance with detected or specified column names
         """
+        # Track which columns are explicitly specified by user
+        user_specified_cols = set()
+
         # Creditor column: user specified > auto-detect > default
         col_creditor = args.col_creditor
-        if col_creditor == DEFAULT_COL_CREDITOR:  # User didn't specify
+        if col_creditor is None:  # User didn't specify
             detected = cls.auto_detect_column(df.columns.tolist(), CREDITOR_ALIASES)
             if detected:
                 print(f"✓ Auto-detected creditor column: '{detected}'")
@@ -112,37 +118,45 @@ class DataFormat:
             else:
                 # Keep the default, will fail later if column doesn't exist
                 col_creditor = DEFAULT_COL_CREDITOR
-        
+        else:
+            user_specified_cols.add('creditor')
+
         # Debtor column: user specified > auto-detect > default
         col_debtor = args.col_debtor
-        if col_debtor == DEFAULT_COL_DEBTOR:  # User didn't specify
+        if col_debtor is None:  # User didn't specify
             detected = cls.auto_detect_column(df.columns.tolist(), DEBTOR_ALIASES)
             if detected:
                 print(f"✓ Auto-detected debtor column: '{detected}'")
                 col_debtor = detected
             else:
                 col_debtor = DEFAULT_COL_DEBTOR
-        
+        else:
+            user_specified_cols.add('debtor')
+
         # Amount column: user specified > auto-detect > default
         col_tot_amount = args.col_tot_amount
-        if col_tot_amount == DEFAULT_COL_TOT_AMOUNT:  # User didn't specify
+        if col_tot_amount is None:  # User didn't specify
             detected = cls.auto_detect_column(df.columns.tolist(), AMOUNT_ALIASES)
             if detected:
                 print(f"✓ Auto-detected amount column: '{detected}'")
                 col_tot_amount = detected
             else:
                 col_tot_amount = DEFAULT_COL_TOT_AMOUNT
-        
+        else:
+            user_specified_cols.add('amount')
+
         # Currency column: user specified > auto-detect > default
         col_currency = args.col_currency
-        if col_currency == DEFAULT_COL_CURRENCY:  # User didn't specify
+        if col_currency is None:  # User didn't specify
             detected = cls.auto_detect_column(df.columns.tolist(), CURRENCY_ALIASES)
             if detected:
                 print(f"✓ Auto-detected currency column: '{detected}'")
                 col_currency = detected
             else:
                 col_currency = DEFAULT_COL_CURRENCY
-        
+        else:
+            user_specified_cols.add('currency')
+
         return cls(
             col_creditor=col_creditor,
             col_debtor=col_debtor,
@@ -150,6 +164,7 @@ class DataFormat:
             col_currency=col_currency,
             separator=args.separator,
             all_selector=args.all_selector,
+            user_specified_columns=user_specified_cols,
         )
 
 
