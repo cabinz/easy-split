@@ -1,12 +1,12 @@
-# Makefile for EasySplit
+# Makefile for SplitBill
 # A bill splitting tool for group trips
 
 # Variables
 PYTHON := python3
 UV := uv
 PIP := pip
-PACKAGE_NAME := easy-split
-MODULE_NAME := easysplit
+PACKAGE_NAME := split-bill
+MODULE_NAME := splitbill
 
 # Colors for output
 RED := \033[0;31m
@@ -128,7 +128,7 @@ endif
 ## help: Show this help message
 .PHONY: help
 help:
-	@echo "$(BLUE)EasySplit Makefile$(NC)"
+	@echo "$(BLUE)SplitBill Makefile$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Available commands:$(NC)"
 	@echo ""

@@ -5,7 +5,7 @@ import pandas as pd
 import tempfile
 import os
 from pathlib import Path
-from easysplit.loader import Loader, DataFormat
+from splitbill.loader import Loader, DataFormat
 
 
 class TestAmountCleaning:

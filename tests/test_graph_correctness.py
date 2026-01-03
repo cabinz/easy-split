@@ -3,7 +3,7 @@
 import pytest
 import math
 from collections import defaultdict
-from easysplit.graph import LendingGraph, simplest_equiv, check_equiv, is_zero, ABS_TOL
+from splitbill.graph import LendingGraph, simplest_equiv, check_equiv, is_zero, ABS_TOL
 
 
 class TestGraphCorrectness:

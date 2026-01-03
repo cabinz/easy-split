@@ -4,10 +4,10 @@ import pytest
 import pandas as pd
 from io import StringIO
 
-from easysplit.validator import DataValidator, ValidationResult, ValidationError, Severity
-from easysplit.loader import DataFormat
-from easysplit.config import DataColumn
-from easysplit.exr import ExchangeRates
+from splitbill.validator import DataValidator, ValidationResult, ValidationError, Severity
+from splitbill.loader import DataFormat
+from splitbill.config import DataColumn
+from splitbill.exr import ExchangeRates
 
 
 class TestValidationError:

@@ -21,10 +21,10 @@ dependencies = [
 Homepage = "https://github.com/cabinz/split-bill"
 
 [project.scripts]
-splitbill = "easysplit.__main__:main"
+splitbill = "splitbill.__main__:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/easysplit"]
+packages = ["splitbill"]
 
 [[tool.uv.index]]
 url = "https://mirrors.aliyun.com/pypi/simple/"

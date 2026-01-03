@@ -5,8 +5,8 @@ import pandas as pd
 import tempfile
 import os
 from pathlib import Path
-from easysplit.loader import DataFormat
-from easysplit.config import (
+from splitbill.loader import DataFormat
+from splitbill.config import (
     CREDITOR_ALIASES, DEBTOR_ALIASES, AMOUNT_ALIASES, CURRENCY_ALIASES,
     DataColumn
 )
